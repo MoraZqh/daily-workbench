@@ -1,0 +1,2493 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>日常集 · 生活工作台</title>
+<script id="LW_TABLES" type="application/json">{
+  "expense": "", "budget": "", "habit": "", "habitLog": "",
+  "fitness": "", "plan": "", "goal": "", "schedule": "",
+  "shopping": "", "media": "", "orchid": ""
+}</script>
+<!-- Supabase 预置配置：填好后每台新设备打开只需登录，不必再手填地址和 key -->
+<script id="LW_SUPABASE" type="application/json">{
+  "url": "", "anonKey": "", "email": ""
+}</script>
+<style>
+:root{
+  --paper:#f6f4ef; --card:#fffdf9; --ink:#2c2a26; --soft:#8a857c;
+  --line:#e7e2d8; --line2:#d8d2c4;
+  --moss:#5f7355; --clay:#b96a4b; --gold:#a8843c; --sky:#5b7d8f; --rose:#a5636f;
+  --ok:#4e7a4e; --warn:#b3762c; --danger:#b04a3e;
+  --shadow:0 1px 2px rgba(60,50,30,.04), 0 6px 20px rgba(60,50,30,.05);
+  --r:14px;
+  --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--sans); background:var(--paper); color:var(--ink);
+  line-height:1.65; font-size:14.5px;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:#e8dfc8}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+a{color:var(--sky)}
+
+/* ---------- 布局 ---------- */
+.shell{display:flex;min-height:100vh}
+.side{
+  width:190px;flex:none;padding:28px 0 28px 26px;position:sticky;top:0;
+  height:100vh;overflow:auto;border-right:1px solid var(--line);
+}
+.side .brand{font-family:var(--serif);font-size:19px;letter-spacing:3px;margin-bottom:4px}
+.side .brand-sub{font-size:11px;color:var(--soft);letter-spacing:2px;margin-bottom:26px}
+.side nav{display:flex;flex-direction:column;gap:2px}
+.side nav button{
+  text-align:left;padding:8px 14px;border-radius:9px;font-size:13.5px;color:#5c574e;
+  display:flex;align-items:center;gap:9px;transition:background .15s,color .15s;
+  border-left:2px solid transparent;border-radius:0 9px 9px 0;
+}
+.side nav button .dot{width:5px;height:5px;border-radius:50%;background:var(--line2);flex:none;transition:background .15s}
+.side nav button:hover{background:#efece3}
+.side nav button.on{color:var(--ink);font-weight:600}
+.side nav button.on .dot{background:var(--clay)}
+.side .foot{margin-top:26px;font-size:11px;color:var(--soft);line-height:1.9;padding-right:20px}
+.main{flex:1;min-width:0;padding:34px 34px 90px;max-width:920px;margin:0 auto}
+
+/* ---------- 状态条 ---------- */
+.statusbar{
+  display:flex;align-items:center;gap:10px;justify-content:flex-end;
+  margin-bottom:6px;font-size:12px;color:var(--soft);
+}
+.statusbar .pill{
+  display:inline-flex;align-items:center;gap:6px;padding:3px 12px;border-radius:999px;
+  border:1px solid var(--line);background:var(--card);
+}
+.statusbar .pill i{width:7px;height:7px;border-radius:50%;display:inline-block}
+.statusbar .pill.online i{background:var(--ok)}
+.statusbar .pill.local i{background:var(--warn)}
+.statusbar .pill.cloud i{background:var(--sky)}
+.statusbar .pill.cloud-err i{background:var(--danger)}
+.statusbar .pill.warn i{background:var(--warn)}
+.statusbar .pill.sync i{background:var(--gold);animation:pulse .9s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.25}}
+.statusbar #modePill{cursor:pointer}
+.statusbar button{color:var(--sky);font-size:12px;padding:3px 8px}
+.statusbar button:hover{text-decoration:underline}
+
+/* ---------- 板块 ---------- */
+section.page{display:none;animation:fadein .25s ease}
+section.page.on{display:block}
+@keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.kicker{font-size:11px;letter-spacing:3px;color:var(--clay);margin-bottom:6px}
+h1.pt{font-family:var(--serif);font-size:28px;font-weight:600;letter-spacing:1px;margin-bottom:6px}
+.page-desc{color:var(--soft);font-size:13px;margin-bottom:26px;max-width:560px}
+.rule{border:none;border-top:1px solid var(--line);margin:26px 0}
+
+/* ---------- 卡片 ---------- */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px;box-shadow:var(--shadow)}
+.card + .card{margin-top:14px}
+.card h3{font-family:var(--serif);font-size:15.5px;font-weight:600;letter-spacing:1px;display:flex;align-items:center;gap:8px}
+.card h3 .sub{font-family:var(--sans);font-weight:400;font-size:12px;color:var(--soft);letter-spacing:0}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+
+/* ---------- 表单 ---------- */
+.form-row{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:11px;color:var(--soft);letter-spacing:1px}
+.field input,.field select,.field textarea{
+  background:#fff;border:1px solid var(--line2);border-radius:8px;padding:7px 10px;
+  min-width:0;outline:none;transition:border-color .15s;
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold)}
+.btn{
+  padding:8px 18px;border-radius:8px;font-size:13px;letter-spacing:1px;
+  background:var(--ink);color:#f7f4ec;transition:opacity .15s;
+}
+.btn:hover{opacity:.85}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line2)}
+.btn.small{padding:4px 12px;font-size:12px}
+.btn.danger{background:transparent;color:var(--danger);border:1px solid #e3c7c2}
+
+/* ---------- 概览 ---------- */
+.today-hero{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.today-hero .date-cn{font-family:var(--serif);font-size:34px;letter-spacing:2px}
+.today-hero .weekday{color:var(--soft);font-size:14px}
+.stat-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.stat-cell{background:var(--card);padding:16px 18px;cursor:pointer;transition:background .15s}
+.stat-cell:hover{background:#faf7f0}
+.stat-cell .k{font-size:11px;color:var(--soft);letter-spacing:2px;margin-bottom:5px}
+.stat-cell .v{font-family:var(--serif);font-size:22px;font-weight:600}
+.stat-cell .v small{font-family:var(--sans);font-size:12px;color:var(--soft);font-weight:400;margin-left:2px}
+.stat-cell .note{font-size:11.5px;color:var(--soft);margin-top:3px}
+.moss{color:var(--moss)} .clay{color:var(--clay)} .gold{color:var(--gold)} .sky{color:var(--sky)} .rose{color:var(--rose)}
+
+/* 进度 */
+.bar{height:6px;background:#ede9df;border-radius:99px;overflow:hidden;margin-top:8px}
+.bar i{display:block;height:100%;border-radius:99px;background:var(--moss);transition:width .4s ease}
+.bar.warn i{background:var(--warn)} .bar.over i{background:var(--danger)}
+
+/* ---------- 记账 ---------- */
+.month-nav{display:flex;align-items:center;gap:10px;font-family:var(--serif);font-size:20px}
+.month-nav button{width:30px;height:30px;border:1px solid var(--line2);border-radius:8px;color:var(--soft);font-size:15px;line-height:1}
+.month-nav button:hover{color:var(--ink);border-color:var(--soft)}
+.ledger-sum{display:flex;gap:26px;flex-wrap:wrap;font-size:13px}
+.ledger-sum b{font-family:var(--serif);font-size:19px;font-weight:600;display:block}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:3px 12px;border-radius:999px;border:1px solid var(--line2);font-size:12px;color:#5c574e;background:transparent}
+.chip.on{background:var(--ink);color:#f7f4ec;border-color:var(--ink)}
+.rec-group{margin-top:14px}
+.rec-day{display:flex;justify-content:space-between;font-size:12px;color:var(--soft);padding:8px 2px;border-bottom:1px solid var(--line)}
+.rec-row{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px dashed var(--line)}
+.rec-row .cat{width:14px;height:14px;border-radius:4px;flex:none}
+.rec-row .name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rec-row .name small{color:var(--soft);margin-left:6px}
+.rec-row .amt{font-family:var(--serif);font-weight:600}
+.rec-row .amt.in{color:var(--moss)}
+.rec-row .ops{display:flex;gap:2px;opacity:0;transition:opacity .15s}
+.rec-row:hover .ops{opacity:1}
+.icon-btn{width:26px;height:26px;border-radius:7px;color:var(--soft);font-size:13px}
+.icon-btn:hover{background:#efece3;color:var(--ink)}
+.empty{padding:26px 0;text-align:center;color:var(--soft);font-size:13px}
+.empty .zh{font-family:var(--serif);letter-spacing:4px;font-size:15px;color:#b5afa2;margin-bottom:4px}
+
+/* 结构条 */
+.struct-row{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:12.5px}
+.struct-row .lb{width:52px;color:#5c574e;flex:none}
+.struct-row .trk{flex:1;height:14px;background:#efece3;border-radius:4px;overflow:hidden}
+.struct-row .trk i{display:block;height:100%;border-radius:4px}
+.struct-row .pc{width:70px;text-align:right;color:var(--soft);flex:none;font-variant-numeric:tabular-nums}
+.cmp-row{display:flex;align-items:center;gap:10px;font-size:12.5px;padding:4px 0}
+.cmp-row .lb{width:52px;flex:none}
+.cmp-row .col{flex:1;display:flex;flex-direction:column;gap:2px}
+.cmp-row .col .trk{height:9px;background:#efece3;border-radius:4px;overflow:hidden}
+.cmp-row .col .trk i{display:block;height:100%;border-radius:4px}
+
+/* ---------- 习惯 ---------- */
+.habit-row{display:flex;align-items:center;gap:12px;padding:12px 2px;border-bottom:1px dashed var(--line)}
+.habit-row .hm-name{flex:1;min-width:0}
+.habit-row .hm-name b{font-size:14px}
+.habit-row .hm-name small{color:var(--soft);margin-left:8px;font-size:11.5px}
+.habit-row .hm-act{display:flex;align-items:center;gap:6px}
+.tick{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--line2);display:flex;align-items:center;justify-content:center;color:transparent;font-size:14px;transition:all .15s;flex:none}
+.tick.on{background:var(--moss);border-color:var(--moss);color:#fff}
+.stepper{display:flex;align-items:center;gap:4px}
+.stepper button{width:26px;height:26px;border:1px solid var(--line2);border-radius:8px;font-size:15px;color:var(--soft)}
+.stepper button:hover{border-color:var(--soft);color:var(--ink)}
+.stepper .val{font-family:var(--serif);min-width:52px;text-align:center;font-weight:600}
+.stepper .val small{font-weight:400;color:var(--soft)}
+.hm-act input[type=number]{width:76px;border:1px solid var(--line2);border-radius:8px;padding:5px 8px;text-align:center}
+.heat{display:grid;grid-template-columns:repeat(15,1fr);gap:3px;margin-top:8px}
+.heat i{aspect-ratio:1;border-radius:3px;background:#ede9df}
+.heat i.l1{background:#cfd8c3}.heat i.l2{background:#a3b78e}.heat i.l3{background:#5f7355}
+.heat i.today{outline:2px solid var(--clay);outline-offset:1px}
+.heat-wrap{padding:10px 0 4px;border-top:1px dashed var(--line);margin-top:10px}
+.heat-legend{display:flex;gap:5px;align-items:center;font-size:10.5px;color:var(--soft);margin-top:6px}
+.heat-legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+/* ---------- 健身 ---------- */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.kpi{background:var(--card);padding:14px 16px}
+.kpi .k{font-size:11px;color:var(--soft);letter-spacing:2px}
+.kpi .v{font-family:var(--serif);font-size:21px;font-weight:600;margin-top:2px}
+.kpi .v small{font-family:var(--sans);font-size:11.5px;color:var(--soft);font-weight:400}
+.chart-box{overflow-x:auto}
+.chart-box svg{display:block;min-width:100%}
+.legend{display:flex;gap:16px;font-size:11.5px;color:var(--soft);margin-top:6px}
+.legend i{width:16px;height:3px;border-radius:2px;display:inline-block;vertical-align:middle;margin-right:5px}
+.plan-row{display:flex;gap:10px;align-items:center;padding:7px 0;border-bottom:1px dashed var(--line)}
+.plan-row .d{width:36px;font-family:var(--serif);color:var(--soft);flex:none}
+.plan-row input{flex:1;border:none;background:transparent;border-bottom:1px dashed transparent;padding:4px 2px;outline:none}
+.plan-row input:focus{border-bottom-color:var(--gold);background:#fff}
+.ring{position:relative;width:88px;height:88px;flex:none}
+.ring svg{transform:rotate(-90deg)}
+.ring .rt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;color:var(--soft)}
+.ring .rt b{font-family:var(--serif);font-size:19px;color:var(--ink)}
+
+/* ---------- 日程 ---------- */
+.sched-day{margin-bottom:16px}
+.sched-day .dh{display:flex;align-items:baseline;gap:10px;margin-bottom:4px}
+.sched-day .dh .dt{font-family:var(--serif);font-size:16px;font-weight:600}
+.sched-day .dh .dw{font-size:11.5px;color:var(--soft)}
+.sched-day .dh .cnt{font-size:11px;color:var(--soft);margin-left:auto}
+.sched-item{display:flex;gap:12px;padding:9px 2px;border-bottom:1px dashed var(--line);align-items:center}
+.sched-item .tm{font-family:var(--serif);color:var(--clay);width:52px;flex:none;font-weight:600}
+.sched-item .tm.none{color:var(--line2)}
+.sched-item .tt{flex:1;min-width:0}
+.sched-item .tt b{font-size:14px}
+.sched-item .tt small{color:var(--soft);margin-left:8px}
+.sched-item.done .tt b{text-decoration:line-through;color:var(--soft)}
+.sched-item.past-due .tt b{color:var(--danger)}
+.pill-done{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--line2);color:transparent;font-size:12px;flex:none;display:flex;align-items:center;justify-content:center}
+.pill-done.on{background:var(--moss);border-color:var(--moss);color:#fff}
+
+/* ---------- 待买 ---------- */
+.buy-row{display:flex;align-items:center;gap:12px;padding:10px 2px;border-bottom:1px dashed var(--line)}
+.buy-row .pri{width:4px;height:26px;border-radius:2px;flex:none}
+.buy-row .nm{flex:1}
+.buy-row .nm b{font-size:14px}
+.buy-row .nm small{display:block;color:var(--soft);font-size:11.5px}
+.buy-row .pr{font-family:var(--serif);font-weight:600}
+.buy-row.bought .nm b{text-decoration:line-through;color:var(--soft)}
+
+/* ---------- 书影音 ---------- */
+.view-toggle{display:flex;gap:2px;background:#efece3;border-radius:9px;padding:3px}
+.view-toggle button{padding:4px 14px;border-radius:7px;font-size:12px;color:var(--soft)}
+.view-toggle button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.wall{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:12px}
+.cover{
+  aspect-ratio:3/4;border-radius:10px;position:relative;overflow:hidden;
+  display:flex;flex-direction:column;justify-content:flex-end;padding:12px;color:#fff;
+  cursor:default;box-shadow:0 2px 8px rgba(40,30,10,.12);
+}
+.cover .ct{font-family:var(--serif);font-size:14.5px;line-height:1.35;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.25)}
+.cover .cs{font-size:10.5px;opacity:.9;margin-top:2px;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+.cover .stars{position:absolute;top:10px;left:12px;font-size:10px;letter-spacing:1px;text-shadow:0 1px 2px rgba(0,0,0,.3)}
+.cover .badge{position:absolute;top:10px;right:10px;font-size:10px;background:rgba(255,255,255,.25);padding:1px 8px;border-radius:99px;backdrop-filter:blur(2px)}
+.media-list-row{display:flex;gap:12px;padding:11px 2px;border-bottom:1px dashed var(--line);align-items:flex-start}
+.media-list-row .tag{font-size:10.5px;padding:2px 9px;border-radius:99px;flex:none;margin-top:3px;letter-spacing:1px}
+.media-list-row .bd{flex:1;min-width:0}
+.media-list-row .bd b{font-size:14.5px}
+.media-list-row .bd .stars{color:var(--gold);font-size:12px;letter-spacing:2px;margin:0 8px}
+.media-list-row .bd .cm{color:var(--soft);font-size:12.5px;margin-top:2px}
+.year-stat{display:flex;gap:30px;flex-wrap:wrap;font-size:12.5px;color:var(--soft)}
+.year-stat b{font-family:var(--serif);font-size:20px;color:var(--ink);display:block}
+
+/* ---------- 蝴蝶兰 ---------- */
+.orchid-hero{
+  border-radius:var(--r);overflow:hidden;border:1px solid var(--line);
+  background:linear-gradient(120deg,#f3ede2 0%,#f7f0e4 40%,#efe6d8 100%);
+  padding:24px 24px 20px;position:relative;
+}
+.orchid-hero::after{content:" FOX FIRE ";position:absolute;right:18px;bottom:14px;font-size:10px;letter-spacing:4px;color:#c9b18a}
+.orchid-hero .on-zh{font-family:var(--serif);font-size:24px;letter-spacing:2px}
+.orchid-hero .on-en{font-size:11px;letter-spacing:3px;color:var(--soft);margin-top:2px}
+.orchid-hero .on-tip{font-size:13px;color:#6a5f4e;margin-top:12px;max-width:520px}
+.care-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.care-cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 15px}
+.care-cell .ck{font-size:11px;letter-spacing:2px;color:var(--soft);display:flex;gap:6px;align-items:center}
+.care-cell .cv{font-size:12.8px;margin-top:5px;color:#4d4840;line-height:1.55}
+.care-actions{display:flex;gap:8px;flex-wrap:wrap}
+.care-actions .btn{background:var(--sky)}
+.care-actions .btn.alt{background:var(--moss)}
+.log-line{display:flex;gap:10px;font-size:12.5px;padding:6px 0;border-bottom:1px dashed var(--line);align-items:baseline}
+.log-line .ld{color:var(--soft);width:92px;flex:none;font-variant-numeric:tabular-nums}
+.log-line .la{font-weight:600;width:44px;flex:none}
+.log-line .ln{color:var(--soft);flex:1;min-width:0}
+.act-tag{display:inline-block;font-size:10.5px;padding:1px 9px;border-radius:99px;letter-spacing:1px}
+.act-浇水{background:#e3ecf0;color:var(--sky)} .act-施肥{background:#ece8df;color:var(--gold)}
+.act-换盆{background:#f0e6df;color:var(--clay)} .act-其他{background:#eceae4;color:var(--soft)}
+
+/* ---------- 状态 / 错误 ---------- */
+.err-card{
+  border:1px solid #e3c7c2;background:#faf3f1;border-radius:var(--r);
+  padding:16px 20px;color:#8c4a3e;font-size:13px;margin-top:14px;
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+}
+.err-card b{font-family:var(--serif)}
+.skel{background:linear-gradient(90deg,#efece3 25%,#f6f3ec 50%,#efece3 75%);background-size:200% 100%;animation:sk 1.2s infinite;border-radius:8px;color:transparent!important;user-select:none}
+@keyframes sk{from{background-position:200% 0}to{background-position:-200% 0}}
+.toast{
+  position:fixed;left:50%;bottom:76px;transform:translateX(-50%) translateY(20px);
+  background:var(--ink);color:#f7f4ec;padding:9px 22px;border-radius:99px;font-size:13px;
+  opacity:0;pointer-events:none;transition:all .25s;z-index:99;box-shadow:0 6px 20px rgba(0,0,0,.2);
+}
+.toast.show{opacity:1;transform:translateX(-50%)}
+
+/* ---------- 弹窗 ---------- */
+.mask{position:fixed;inset:0;background:rgba(40,34,24,.35);z-index:50;display:none;align-items:flex-start;justify-content:center;padding:7vh 16px 16px;backdrop-filter:blur(2px)}
+.mask.on{display:flex}
+.modal{
+  background:var(--card);border-radius:16px;max-width:560px;width:100%;max-height:82vh;overflow:auto;
+  padding:26px 28px;box-shadow:0 20px 60px rgba(0,0,0,.18);
+}
+.modal h2{font-family:var(--serif);font-size:19px;margin-bottom:4px}
+.modal .mh-sub{font-size:12.5px;color:var(--soft);margin-bottom:18px;line-height:1.7}
+.bind-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line)}
+.bind-row .bn{width:120px;flex:none;font-size:13px}
+.bind-row .bn small{display:block;color:var(--soft);font-size:10.5px}
+.bind-row input{flex:1;border:1px solid var(--line2);border-radius:8px;padding:6px 10px;font-size:12.5px;font-family:ui-monospace,Consolas,monospace}
+.bind-row .st{font-size:11px;flex:none;width:40px;text-align:center}
+.step-list{counter-reset:s;font-size:13px;line-height:1.9}
+.step-list li{list-style:none;padding-left:34px;position:relative;counter-increment:s;margin-bottom:8px}
+.step-list li::before{
+  content:counter(s);position:absolute;left:0;top:2px;width:22px;height:22px;border-radius:50%;
+  background:#efe9db;color:var(--clay);font-size:11.5px;display:flex;align-items:center;justify-content:center;font-family:var(--serif);
+}
+code.k{background:#efece3;border-radius:5px;padding:1px 7px;font-size:12px;font-family:ui-monospace,Consolas,monospace}
+
+/* ---------- 云同步面板 ---------- */
+.sec{margin-top:24px;padding-top:18px;border-top:1px solid var(--line)}
+.sec.first{margin-top:0;padding-top:0;border-top:none}
+.sec-h{font-family:var(--serif);font-size:15px;font-weight:600;letter-spacing:1px;margin-bottom:3px;display:flex;align-items:center;gap:8px}
+.sec-h .tag{font-family:var(--sans);font-size:10.5px;font-weight:400;letter-spacing:1px;padding:1px 8px;border-radius:99px;background:#efece3;color:var(--soft)}
+.sec-h .tag.rec{background:#e6efe2;color:var(--moss)}
+.sec-sub{font-size:12.5px;color:var(--soft);line-height:1.75;margin-bottom:12px}
+.conn-row{display:flex;align-items:center;gap:10px;padding:6px 0}
+.conn-row label{width:96px;flex:none;font-size:12.5px;color:#5c574e}
+.conn-row input{
+  flex:1;min-width:0;border:1px solid var(--line2);border-radius:8px;padding:7px 10px;
+  font-size:12.5px;font-family:ui-monospace,Consolas,monospace;background:#fff;outline:none;
+}
+.conn-row input:focus{border-color:var(--gold)}
+.conn-state{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:9px 13px;border-radius:9px;background:#f3f1ea;color:#5c574e;margin:10px 0;line-height:1.6}
+.conn-state.ok{background:#eaf2e6;color:#3f6135}
+.conn-state.err{background:#faf1ef;color:#8c4a3e}
+.conn-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.diag{font-size:12px;color:var(--soft);white-space:pre-wrap;font-family:ui-monospace,Consolas,monospace;margin-top:10px;line-height:1.8;max-height:230px;overflow:auto;word-break:break-all}
+
+/* ---------- 移动端 ---------- */
+.bottom-nav{display:none}
+@media (max-width:860px){
+  .side{display:none}
+  .main{padding:20px 16px 110px}
+  .g2,.g3,.g4{grid-template-columns:1fr 1fr}
+  .kpis{grid-template-columns:1fr 1fr}
+  .stat-strip{grid-template-columns:1fr 1fr}
+  .care-grid{grid-template-columns:1fr 1fr}
+  h1.pt{font-size:23px}
+  .today-hero .date-cn{font-size:27px}
+  .bottom-nav{
+    display:grid;grid-template-columns:repeat(8,1fr);position:fixed;left:0;right:0;bottom:0;
+    background:rgba(253,251,246,.94);backdrop-filter:blur(10px);border-top:1px solid var(--line);
+    padding:6px 2px calc(6px + env(safe-area-inset-bottom));z-index:40;
+  }
+  .bottom-nav button{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;color:var(--soft);padding:4px 0}
+  .bottom-nav button .ico{font-size:16px;line-height:1;font-family:var(--serif)}
+  .bottom-nav button.on{color:var(--clay);font-weight:600}
+  .toast{bottom:90px}
+  .field{flex:1 1 130px}
+}
+@media (max-width:420px){
+  .g2,.g3,.g4,.care-grid{grid-template-columns:1fr}
+  .stat-strip{grid-template-columns:1fr 1fr}
+  .wall{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <div class="brand">日常集</div>
+    <div class="brand-sub">LIFE · WORKBENCH</div>
+    <nav id="sideNav"></nav>
+    <div class="foot" id="sideFoot"></div>
+  </aside>
+
+  <main class="main">
+    <div class="statusbar">
+      <span class="pill local" id="modePill"><i></i><span id="modeText">检测数据环境…</span></span>
+      <button id="bindBtn">数据源设置</button>
+      <button id="backupBtn">备份</button>
+    </div>
+
+    <!-- ================= 今日概览 ================= -->
+    <section class="page" id="page-overview">
+      <div class="today-hero">
+        <span class="date-cn" id="todayDate">—</span>
+        <span class="weekday" id="todayWeek"></span>
+      </div>
+      <div class="page-desc" id="todayHint">先看到这里，数据正在路上。</div>
+
+      <div class="stat-strip" id="ovStats">
+        <div class="stat-cell" data-go="money"><div class="k">本月支出</div><div class="v skel" id="ovSpend">…</div><div class="note" id="ovBudgetNote">预算加载中</div></div>
+        <div class="stat-cell" data-go="habit"><div class="k">今日习惯</div><div class="v skel" id="ovHabit">…</div><div class="note" id="ovHabitNote"></div></div>
+        <div class="stat-cell" data-go="sched"><div class="k">最近日程</div><div class="v skel" id="ovSched">…</div><div class="note" id="ovSchedNote"></div></div>
+        <div class="stat-cell" data-go="buy"><div class="k">待买清单</div><div class="v skel" id="ovBuy">…</div><div class="note" id="ovBuyNote"></div></div>
+        <div class="stat-cell" data-go="orchid"><div class="k">狐狸之火 · 浇水</div><div class="v skel" id="ovOrchid">…</div><div class="note" id="ovOrchidNote"></div></div>
+        <div class="stat-cell" data-go="media"><div class="k">今年收藏</div><div class="v skel" id="ovMedia">…</div><div class="note" id="ovMediaNote"></div></div>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <h3>今日一句 <span class="sub" id="ovQuoteSrc"></span></h3>
+        <p id="ovQuote" style="font-family:var(--serif);font-size:15px;letter-spacing:1px;margin-top:8px;color:#4d4840">…</p>
+      </div>
+    </section>
+
+    <!-- ================= 记账理财 ================= -->
+    <section class="page" id="page-money">
+      <div class="kicker">02 · MONEY</div>
+      <h1 class="pt">记账理财</h1>
+      <p class="page-desc">记一笔只需十秒。月初设个预算，月底看结构——钱去哪儿了，一眼分明。</p>
+
+      <div class="card">
+        <div class="month-nav">
+          <button id="mPrev">‹</button><span id="mLabel">—</span><button id="mNext">›</button>
+          <span style="font-size:13px;color:var(--soft);margin-left:auto" id="mBudgetHint"></span>
+        </div>
+        <hr class="rule" style="margin:14px 0">
+        <div class="ledger-sum">
+          <div>支出<b class="clay" id="mOut">—</b></div>
+          <div>收入<b class="moss" id="mIn">—</b></div>
+          <div>结余<b id="mNet">—</b></div>
+          <div style="flex:1;min-width:180px">预算<b id="mBudgetV" style="cursor:pointer" title="点击修改预算">—</b>
+            <div class="bar" id="mBudgetBar" style="width:100%;min-width:120px"><i style="width:0"></i></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>记一笔</h3>
+        <div class="form-row" style="margin-top:12px">
+          <div class="field"><label>日期</label><input type="date" id="exDate"></div>
+          <div class="field"><label>类型</label><select id="exType"><option value="支出">支出</option><option value="收入">收入</option></select></div>
+          <div class="field"><label>分类</label><select id="exCat"></select></div>
+          <div class="field"><label>金额</label><input type="number" id="exAmt" placeholder="0.00" step="0.01" min="0"></div>
+          <div class="field" style="flex:2"><label>备注</label><input type="text" id="exNote" placeholder="可选" maxlength="40"></div>
+          <button class="btn" id="exSave">记 入</button>
+        </div>
+      </div>
+
+      <div class="grid g2" style="margin-top:14px">
+        <div class="card" style="margin:0">
+          <h3>消费结构 <span class="sub" id="structMonth"></span></h3>
+          <div id="structBox" style="margin-top:10px"><div class="empty"><div class="zh">虚 位 以 待</div>本月还没有支出记录</div></div>
+        </div>
+        <div class="card" style="margin:0">
+          <h3>月度对比 <span class="sub">本月 vs 上月</span></h3>
+          <div id="cmpBox" style="margin-top:10px"><div class="empty"><div class="zh">虚 位 以 待</div>攒够两个月数据后自动出现</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <h3>流水</h3>
+          <div class="chips" id="catChips" style="margin-left:auto"></div>
+        </div>
+        <div id="ledgerBox" style="margin-top:8px"></div>
+      </div>
+    </section>
+
+    <!-- ================= 习惯健康 ================= -->
+    <section class="page" id="page-habit">
+      <div class="kicker">03 · HABIT</div>
+      <h1 class="pt">习惯健康</h1>
+      <p class="page-desc">微小的坚持最值得被看见。支持打卡、计数、数值三种方式，热力图记录过去 30 天。</p>
+
+      <div class="card">
+        <h3>新习惯</h3>
+        <div class="form-row" style="margin-top:12px">
+          <div class="field" style="flex:2"><label>名称</label><input type="text" id="hbName" placeholder="如：喝水 / 阅读 / 走路" maxlength="16"></div>
+          <div class="field"><label>方式</label><select id="hbType"><option value="check">打卡</option><option value="count">计数</option><option value="value">数值</option></select></div>
+          <div class="field" id="hbTargetWrap" style="display:none"><label>目标 / 单位</label><div style="display:flex;gap:6px"><input type="number" id="hbTarget" placeholder="8" style="width:70px"><input type="text" id="hbUnit" placeholder="杯" style="width:64px"></div></div>
+          <button class="btn" id="hbAdd">添 加</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>今日打卡 <span class="sub" id="hbTodayLabel"></span></h3>
+        <div id="habitList" style="margin-top:6px"></div>
+      </div>
+    </section>
+
+    <!-- ================= 减脂健身 ================= -->
+    <section class="page" id="page-fit">
+      <div class="kicker">04 · FIT</div>
+      <h1 class="pt">减脂健身</h1>
+      <p class="page-desc">体重只是数字，趋势才是答案。记录体重与体脂，看 7 日均线慢慢向下。</p>
+
+      <div class="kpis">
+        <div class="kpi"><div class="k">最新体重</div><div class="v" id="ftWeight">— <small>kg</small></div></div>
+        <div class="kpi"><div class="k">7 日均线</div><div class="v" id="ftMA">— <small>kg</small></div></div>
+        <div class="kpi"><div class="k">BMI</div><div class="v" id="ftBMI">—</div></div>
+        <div class="kpi"><div class="k">目标进度</div><div class="v" id="ftGoalPct">—</div></div>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <h3>记一笔身体数据</h3>
+        <div class="form-row" style="margin-top:12px">
+          <div class="field"><label>日期</label><input type="date" id="ftDate"></div>
+          <div class="field"><label>体重 kg</label><input type="number" step="0.1" id="ftW" placeholder="65.0"></div>
+          <div class="field"><label>体脂 %</label><input type="number" step="0.1" id="ftF" placeholder="22.5"></div>
+          <div class="field"><label>摄入 kcal</label><input type="number" id="ftIn" placeholder="可选"></div>
+          <div class="field"><label>消耗 kcal</label><input type="number" id="ftOut" placeholder="可选"></div>
+          <div class="field" style="flex:2"><label>备注</label><input type="text" id="ftNote" placeholder="可选" maxlength="40"></div>
+          <button class="btn" id="ftSave">记 录</button>
+        </div>
+        <div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:12px;font-size:12.5px;color:var(--soft)">
+          <span>目标体重：<b id="ftGoalV" style="cursor:pointer;color:var(--ink)">未设置</b>（点击修改）</span>
+          <span>近 7 日平均热量缺口：<b id="ftDeficit" style="color:var(--ink)">—</b></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>趋势</h3>
+        <div class="chart-box" id="ftChart"></div>
+        <div class="legend"><span><i style="background:#b96a4b"></i>体重</span><span><i style="background:#5b7d8f"></i>体脂</span><span><i style="background:#5f7355"></i>体重 7 日均线</span></div>
+      </div>
+
+      <div class="card">
+        <h3>周计划 <span class="sub">点击文字即可编辑，失焦保存</span></h3>
+        <div id="planBox" style="margin-top:8px"></div>
+      </div>
+    </section>
+
+    <!-- ================= 日程统筹 ================= -->
+    <section class="page" id="page-sched">
+      <div class="kicker">05 · SCHEDULE</div>
+      <h1 class="pt">日程统筹</h1>
+      <p class="page-desc">要事在前，做完划掉。过期未完成的会标红提醒。</p>
+
+      <div class="card">
+        <h3>新日程</h3>
+        <div class="form-row" style="margin-top:12px">
+          <div class="field"><label>日期</label><input type="date" id="scDate"></div>
+          <div class="field"><label>时间</label><input type="time" id="scTime"></div>
+          <div class="field" style="flex:2"><label>事项</label><input type="text" id="scTitle" placeholder="如：报税 / 复核凭证 / 和霍焱对账" maxlength="50"></div>
+          <div class="field"><label>地点</label><input type="text" id="scPlace" placeholder="可选" maxlength="20"></div>
+          <button class="btn" id="scSave">加 入</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:12px">
+          <h3>日程表</h3>
+          <label style="margin-left:auto;font-size:12px;color:var(--soft);display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="scHideDone"> 隐藏已完成</label>
+        </div>
+        <div id="schedBox" style="margin-top:10px"></div>
+      </div>
+    </section>
+
+    <!-- ================= 待买清单 ================= -->
+    <section class="page" id="page-buy">
+      <div class="kicker">06 · WISH LIST</div>
+      <h1 class="pt">待买清单</h1>
+      <p class="page-desc">想买的先放这里，冷静三天再下单。买完归档，心里有账。</p>
+
+      <div class="card">
+        <h3>加一项</h3>
+        <div class="form-row" style="margin-top:12px">
+          <div class="field" style="flex:2"><label>品名</label><input type="text" id="byName" placeholder="如：滤水壶滤芯 / 蝴蝶兰专用肥" maxlength="30"></div>
+          <div class="field"><label>预估 ¥</label><input type="number" id="byPrice" placeholder="0" step="0.01" min="0"></div>
+          <div class="field"><label>优先级</label><select id="byPri"><option value="高">高</option><option value="中" selected>中</option><option value="低">低</option></select></div>
+          <button class="btn" id="bySave">加 入</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap">
+          <h3>清单</h3>
+          <span style="margin-left:auto;font-size:12.5px;color:var(--soft)" id="bySum"></span>
+        </div>
+        <div id="buyBox" style="margin-top:8px"></div>
+      </div>
+    </section>
+
+    <!-- ================= 书影音 ================= -->
+    <section class="page" id="page-media">
+      <div class="kicker">07 · LIBRARY</div>
+      <h1 class="pt">书影音收藏</h1>
+      <p class="page-desc">读过的书、看过的电影、听过的专辑，都是生活的年轮。封面墙与列表两种心情。</p>
+
+      <div class="card">
+        <h3>收一件</h3>
+        <div class="form-row" style="margin-top:12px">
+          <div class="field" style="flex:2"><label>标题</label><input type="text" id="mdTitle" placeholder="书名 / 片名 / 专辑名" maxlength="40"></div>
+          <div class="field"><label>类型</label><select id="mdType"><option value="书">书</option><option value="影">影</option><option value="音">音</option></select></div>
+          <div class="field"><label>状态</label><select id="mdStatus"><option value="想看">想看</option><option value="在看">在看</option><option value="看完">看完</option></select></div>
+          <div class="field"><label>星级</label><select id="mdRating"><option value="0">未评</option><option value="1">★</option><option value="2">★★</option><option value="3">★★★</option><option value="4">★★★★</option><option value="5">★★★★★</option></select></div>
+          <div class="field" style="flex:2"><label>短评</label><input type="text" id="mdComment" placeholder="一句话足矣" maxlength="60"></div>
+          <button class="btn" id="mdSave">收 藏</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <h3>收藏夹</h3>
+          <div class="chips" id="mdChips" style="margin-left:auto"></div>
+          <div class="view-toggle"><button id="mdViewWall" class="on">封面墙</button><button id="mdViewList">列表</button></div>
+        </div>
+        <div class="year-stat" style="margin-top:14px;padding-bottom:12px;border-bottom:1px solid var(--line)" id="mdYearStat"></div>
+        <div id="mediaBox" style="margin-top:12px"></div>
+      </div>
+    </section>
+
+    <!-- ================= 蝴蝶兰 ================= -->
+    <section class="page" id="page-orchid">
+      <div class="kicker">08 · ORCHID</div>
+      <h1 class="pt">狐狸之火 · 蝴蝶兰</h1>
+      <p class="page-desc">Phalaenopsis 'Fox Fire'——橙红火色蝴蝶兰。养蝴蝶兰的秘诀只有一个词：见干见湿。</p>
+
+      <div class="orchid-hero">
+        <div class="on-zh">🪷 狐狸之火</div>
+        <div class="on-en">PHALAENOPSIS · FOX FIRE · 2026.09.14 入家</div>
+        <p class="on-tip" id="ocDailyTip">正在准备今日养护提示…</p>
+      </div>
+
+      <div class="grid g2" style="margin-top:14px">
+        <div class="card" style="margin:0;display:flex;gap:18px;align-items:center">
+          <div class="ring" id="ocWaterRing"></div>
+          <div style="flex:1">
+            <h3>浇水</h3>
+            <p style="font-size:12.5px;color:var(--soft);margin-top:6px" id="ocWaterText">—</p>
+          </div>
+        </div>
+        <div class="card" style="margin:0;display:flex;gap:18px;align-items:center">
+          <div class="ring" id="ocFertRing"></div>
+          <div style="flex:1">
+            <h3>施肥</h3>
+            <p style="font-size:12.5px;color:var(--soft);margin-top:6px" id="ocFertText">—</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>今日养护动作</h3>
+        <div class="care-actions" style="margin-top:12px">
+          <button class="btn" id="ocWater">💧 浇水</button>
+          <button class="btn alt" id="ocFert">🌱 施肥</button>
+          <button class="btn ghost" id="ocOther">✎ 其他 / 记一笔</button>
+        </div>
+        <p style="font-size:11.5px;color:var(--soft);margin-top:10px">浇水口诀：水苔摸起来干脆了再浇，浇就浇透，托盘别积水，叶心别留水。</p>
+      </div>
+
+      <div class="card">
+        <h3>养护要点</h3>
+        <div class="care-grid" style="margin-top:12px">
+          <div class="care-cell"><div class="ck">☀ 光照</div><div class="cv">明亮散射光，隔着纱帘晒。避开正午直晒，会晒伤叶片。</div></div>
+          <div class="care-cell"><div class="ck">💧 浇水</div><div class="cv">见干见湿。当前季节约 7–10 天一次，掂盆变轻、水苔发白再浇。</div></div>
+          <div class="care-cell"><div class="ck">🌡 温度</div><div class="cv">18–28℃ 最舒适。低于 15℃ 搬进屋，远离空调风口和暖气片。</div></div>
+          <div class="care-cell"><div class="ck">💨 湿度</div><div class="cv">喜欢 60–70% 湿度。干燥可以旁边放一盆水，别往花上猛喷。</div></div>
+          <div class="care-cell"><div class="ck">🌸 施肥</div><div class="cv">花期每 2–3 周一次磷钾薄肥（浓度减半），花谢后停肥休养。</div></div>
+          <div class="care-cell"><div class="ck">🌬 通风</div><div class="cv">每天开窗通风一会儿，闷热潮湿是烂根的第一大原因。</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>养护日志 <span class="sub">最近 30 天</span></h3>
+        <div id="ocLogBox" style="margin-top:8px"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- 底部导航（移动端） -->
+<nav class="bottom-nav" id="bottomNav"></nav>
+
+<!-- 数据源设置弹窗 -->
+<div class="mask" id="bindMask">
+  <div class="modal">
+    <h2>数据源设置</h2>
+    <p class="mh-sub" id="bindIntro"></p>
+
+    <!-- ① Supabase 云同步（主推） -->
+    <div class="sec first">
+      <div class="sec-h">Supabase 云同步 <span class="tag rec">推荐</span></div>
+      <div class="sec-sub">数据存进你自己的 Supabase 数据库。手机、电脑、换浏览器，登录同一个账号就能看到同一份数据。</div>
+      <div class="conn-state" id="sbState">尚未配置</div>
+      <div class="conn-row"><label>项目地址</label><input id="sbUrl" placeholder="https://xxxxxxxx.supabase.co" spellcheck="false" autocomplete="off"></div>
+      <div class="conn-row"><label>anon key</label><input id="sbKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6…" spellcheck="false" autocomplete="off"></div>
+      <div class="conn-row"><label>邮箱</label><input id="sbEmail" placeholder="登录邮箱" spellcheck="false" autocomplete="off"></div>
+      <div class="conn-row"><label>密码</label><input id="sbPass" type="password" placeholder="登录密码（不会保存）" autocomplete="off"></div>
+      <div class="conn-actions">
+        <button class="btn" id="sbLogin">登录</button>
+        <button class="btn ghost" id="sbSignup">注册新账号</button>
+        <button class="btn ghost" id="sbCheck">连接自检</button>
+        <button class="btn ghost" id="sbOut">退出登录</button>
+      </div>
+      <div class="diag" id="sbDiag"></div>
+      <div class="sec-sub" id="sbSteps" style="margin-top:14px"></div>
+    </div>
+
+    <!-- ② 资料库轻应用（可选） -->
+    <div class="sec">
+      <div class="sec-h">资料库轻应用 <span class="tag">可选</span></div>
+      <div class="sec-sub">在 WorkBuddy 资料库中打开本页时使用：粘贴各模块对应的表格 ID 即可在线读写。</div>
+      <div id="bindRows"></div>
+      <div class="conn-actions">
+        <button class="btn ghost" id="bindSave">保存绑定</button>
+        <button class="btn ghost" id="bindTest">测试连接</button>
+      </div>
+      <div class="diag" id="bindTestOut"></div>
+    </div>
+
+    <!-- ③ 配置迁移 -->
+    <div class="sec">
+      <div class="conn-actions" style="margin-top:0">
+        <button class="btn ghost" id="bindExport">复制配置</button>
+        <button class="btn ghost" id="bindImport">粘贴配置</button>
+        <button class="btn ghost" id="bindClose">关闭</button>
+      </div>
+      <div class="sec-sub" id="bindSteps" style="margin-top:12px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 备份弹窗 -->
+<div class="mask" id="backupMask">
+  <div class="modal">
+    <h2>数据备份</h2>
+    <p class="mh-sub">本地模式的数据存在这台设备的浏览器里。换设备前记得导出；在线模式的数据已在云端，无需备份。</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn" id="bkExport">导出 JSON 备份</button>
+      <button class="btn ghost" id="bkImport">导入备份</button>
+      <button class="btn ghost" id="bkClose">关闭</button>
+    </div>
+    <input type="file" id="bkFile" accept=".json" style="display:none">
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+"use strict";
+/* ============================================================
+   日常集 · 生活工作台 —— 数据层
+   ------------------------------------------------------------
+   三种后端，启动时按优先级自动选择：
+
+     1. library   资料库轻应用 —— 宿主注入 smartpage-database-sdk，
+                  用 window.__SMART_PAGE__.database 读写表格
+     2. supabase  Supabase 云同步 —— Auth 邮箱登录 + PostgREST 读写，
+                  纯 fetch 实现、零外部依赖，轮询 + 聚焦刷新做双向同步
+     3. local     localStorage —— 离线兜底，可导出备份 / 迁移
+
+   写入策略：一律「先写服务端、再回读服务端」，不做乐观假刷新，
+   保证界面显示的就是云端真实状态，不会静默丢数据。
+   ============================================================ */
+
+/* ---------- 工具 ---------- */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const pad = n => String(n).padStart(2, "0");
+const todayStr = () => { const d = new Date(); return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()); };
+const monthStr = () => todayStr().slice(0, 7);
+const uid = () => "r" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const num = v => { const n = parseFloat(v); return isNaN(n) ? null : n; };
+const fmt = n => (Math.round(n*100)/100).toLocaleString("zh-CN", {maximumFractionDigits:2});
+const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const dayDiff = (a, b) => Math.floor((new Date(a + "T00:00:00") - new Date(b + "T00:00:00")) / 86400000);
+const addDays = (s, n) => { const d = new Date(s + "T00:00:00"); d.setDate(d.getDate()+n); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); };
+const hhmm = () => { const d = new Date(); return pad(d.getHours()) + ":" + pad(d.getMinutes()); };
+
+/* 从各种后端错误结构里抠出人能看懂的一句话 */
+function apiErr(d){
+  if (!d) return "";
+  if (typeof d === "string") return d;
+  return d.msg || d.message || d.error_description || d.hint || d.details || d.error || "";
+}
+
+let toastTimer = null;
+function toast(msg){
+  const t = $("#toast"); if (!t) return;
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 2400);
+}
+
+/* ---------- 表定义 ----------
+   csv: 资料库模式用的 CSV 模板名
+   sb : Supabase 模式的表名（与 supabase/schema.sql 一致）           */
+const TABLES = {
+  expense:  { name:"收支记录",   csv:"记账-收支记录.csv",   sb:"lw_expense"   },
+  budget:   { name:"月度预算",   csv:"记账-月度预算.csv",   sb:"lw_budget"    },
+  habit:    { name:"习惯列表",   csv:"习惯-习惯列表.csv",   sb:"lw_habit"     },
+  habitLog: { name:"习惯打卡",   csv:"习惯-打卡记录.csv",   sb:"lw_habit_log" },
+  fitness:  { name:"身体记录",   csv:"健身-身体记录.csv",   sb:"lw_fitness"   },
+  plan:     { name:"周计划",     csv:"健身-周计划.csv",     sb:"lw_plan"      },
+  goal:     { name:"健身目标",   csv:"健身-目标.csv",       sb:"lw_goal"      },
+  schedule: { name:"日程表",     csv:"日程-日程表.csv",     sb:"lw_schedule"  },
+  shopping: { name:"待买清单",   csv:"生活-待买清单.csv",   sb:"lw_shopping"  },
+  media:    { name:"书影音收藏", csv:"书影音-收藏.csv",     sb:"lw_media"     },
+  orchid:   { name:"蝴蝶兰日志", csv:"蝴蝶兰-养护日志.csv", sb:"lw_orchid"    }
+};
+
+/* 每个页面用到的表 —— 轮询时只刷新当前页相关表，省流量 */
+const PAGE_TABLES = {
+  overview: ["expense","budget","habit","habitLog","schedule","shopping","media","orchid"],
+  money:    ["expense","budget"],
+  habit:    ["habit","habitLog"],
+  fit:      ["fitness","plan","goal"],
+  sched:    ["schedule"],
+  buy:      ["shopping"],
+  media:    ["media"],
+  orchid:   ["orchid"]
+};
+
+/* ============================================================
+   后端一：资料库绑定配置（页面内嵌 < 权威源，localStorage 存本机覆盖）
+   ============================================================ */
+const Bind = {
+  map: {},
+  load(){
+    let base = {};
+    try { base = JSON.parse($("#LW_TABLES").textContent) || {}; } catch(e){}
+    let local = {};
+    try { local = JSON.parse(localStorage.getItem("lw.bind") || "{}") || {}; } catch(e){}
+    this.map = {};
+    Object.keys(TABLES).forEach(k => {
+      const v = (local[k] && String(local[k]).trim()) || (base[k] && String(base[k]).trim()) || "";
+      this.map[k] = v;
+    });
+  },
+  save(newMap){
+    this.map = Object.assign({}, this.map, newMap);
+    localStorage.setItem("lw.bind", JSON.stringify(this.map));
+  },
+  id(key){ return this.map[key] || ""; },
+  boundKeys(){ return Object.keys(TABLES).filter(k => this.id(k)); }
+};
+
+/* ============================================================
+   后端一：资料库 SDK 检测
+   ============================================================ */
+const SDK = {
+  db: null,
+  async detect(timeoutMs){
+    const t0 = Date.now();
+    while (Date.now() - t0 < (timeoutMs || 2000)){
+      if (window.__SMART_PAGE__ && window.__SMART_PAGE__.database && typeof window.__SMART_PAGE__.database.query === "function"){
+        this.db = window.__SMART_PAGE__.database; return true;
+      }
+      await new Promise(r => setTimeout(r, 150));
+    }
+    return false;
+  }
+};
+
+/* ============================================================
+   后端二：Supabase 客户端（零依赖，纯 fetch）
+   ------------------------------------------------------------
+   Auth   走 GoTrue  : POST {url}/auth/v1/token?grant_type=...
+   Data   走 PostgREST: {url}/rest/v1/{table}
+   鉴权   请求头带 apikey（anon key）与 Authorization: Bearer <access_token>
+   ============================================================ */
+const LS_CFG = "lw.sb.cfg", LS_SES = "lw.sb.session";
+
+const SB = {
+  cfg: null,       // { url, anonKey, email }
+  session: null,   // { access_token, refresh_token, expires_at, email, user }
+  user: null,
+
+  /* ---- 配置持久化 ----
+     优先级：本机 localStorage 覆盖 > 页面内置预置配置 > 无        */
+  loadCfg(){
+    let local = null;
+    try { local = JSON.parse(localStorage.getItem(LS_CFG) || "null"); } catch(e){}
+    if (local && local.url){ this.cfg = local; return this.cfg; }
+    let builtin = null;
+    try {
+      const el = $("#LW_SUPABASE");
+      builtin = el ? JSON.parse(el.textContent || "null") : null;
+    } catch(e){}
+    if (builtin && builtin.url){
+      this.cfg = { url: String(builtin.url).trim(), anonKey: String(builtin.anonKey || "").trim(), email: String(builtin.email || "").trim() };
+    } else {
+      this.cfg = null;
+    }
+    return this.cfg;
+  },
+  saveCfg(c){
+    this.cfg = {
+      url: String(c.url || "").trim().replace(/\/+$/, ""),
+      anonKey: String(c.anonKey || "").trim(),
+      email: String(c.email || "").trim()
+    };
+    localStorage.setItem(LS_CFG, JSON.stringify(this.cfg));
+  },
+  clearCfg(){ this.cfg = null; localStorage.removeItem(LS_CFG); },
+  configured(){ return !!(this.cfg && this.cfg.url && this.cfg.anonKey); },
+
+  /* ---- 会话持久化 ---- */
+  loadSession(){
+    try { this.session = JSON.parse(localStorage.getItem(LS_SES) || "null"); } catch(e){ this.session = null; }
+    if (this.session && this.session.user) this.user = this.session.user;
+    return this.session;
+  },
+  saveSession(){ try { localStorage.setItem(LS_SES, JSON.stringify(this.session)); } catch(e){} },
+  clearSession(){ this.session = null; this.user = null; localStorage.removeItem(LS_SES); },
+
+  ready(){ return !!(this.configured() && this.session && this.session.access_token); },
+  base(){ return String((this.cfg && this.cfg.url) || "").replace(/\/+$/, ""); },
+
+  /* ---- Auth ---- */
+  async _auth(path, body){
+    if (!this.configured()) throw new Error("还没填 Supabase 地址");
+    let res;
+    try {
+      res = await fetch(this.base() + "/auth/v1/" + path, {
+        method: "POST",
+        headers: { "apikey": this.cfg.anonKey, "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+    } catch(e){ throw new Error("连不上 Supabase，请检查地址与网络"); }
+    const txt = await res.text();
+    let data = null;
+    try { data = txt ? JSON.parse(txt) : null; } catch(e){ data = { msg: txt }; }
+    if (!res.ok) throw new Error(apiErr(data) || ("HTTP " + res.status));
+    return data || {};
+  },
+  async signIn(email, password){
+    const d = await this._auth("token?grant_type=password", { email, password });
+    this._setSession(d, email);
+    return this.user;
+  },
+  async signUp(email, password){
+    const d = await this._auth("signup", { email, password });
+    if (d.access_token){ this._setSession(d, email); return { confirmed: true }; }
+    return { confirmed: false };   // 项目开了邮箱确认，需要先去邮箱点链接
+  },
+  async refreshSession(){
+    if (!this.session || !this.session.refresh_token) return false;
+    try {
+      const d = await this._auth("token?grant_type=refresh_token", { refresh_token: this.session.refresh_token });
+      this._setSession(d, this.session.email);
+      return true;
+    } catch(e){ this.clearSession(); return false; }
+  },
+  async ensureFresh(){
+    if (!this.session) return false;
+    if (Date.now() < (this.session.expires_at || 0)) return true;
+    return await this.refreshSession();
+  },
+  signOut(){ this.clearSession(); },
+  _setSession(d, email){
+    this.user = d.user || { email };
+    this.session = {
+      access_token: d.access_token,
+      refresh_token: d.refresh_token,
+      expires_at: Date.now() + (Number(d.expires_in) || 3600) * 1000 - 120000,  // 提前 2 分钟续期
+      email: (this.user && this.user.email) || email,
+      user: this.user
+    };
+    this.saveSession();
+  },
+
+  /* ---- PostgREST ---- */
+  async rest(method, path, opt){
+    opt = opt || {};
+    if (!this.ready()) throw new Error("尚未登录");
+    if (!(await this.ensureFresh())) throw new Error("登录已过期，请重新登录");
+    const headers = {
+      "apikey": this.cfg.anonKey,
+      "Authorization": "Bearer " + this.session.access_token,
+      "Content-Type": "application/json"
+    };
+    if (opt.prefer) headers["Prefer"] = opt.prefer;
+    let res;
+    try {
+      res = await fetch(this.base() + "/rest/v1/" + path, {
+        method, headers,
+        body: opt.body ? JSON.stringify(opt.body) : undefined
+      });
+    } catch(e){ throw new Error("网络连接失败，请检查网络后重试"); }
+    const txt = await res.text();
+    if (!res.ok){
+      let d = null; try { d = txt ? JSON.parse(txt) : null; } catch(e){}
+      throw new Error(apiErr(d) || ("HTTP " + res.status));
+    }
+    if (!txt) return null;
+    try { return JSON.parse(txt); } catch(e){ return null; }
+  },
+  list(table){ return this.rest("GET", table + "?select=*&order=created_at.asc&limit=2000"); },
+  create(table, row){ return this.rest("POST", table, { body: [row], prefer: "return=representation" }); },
+  patch(table, id, row){ return this.rest("PATCH", table + "?id=eq." + encodeURIComponent(id), { body: row, prefer: "return=representation" }); },
+  destroy(table, id){ return this.rest("DELETE", table + "?id=eq." + encodeURIComponent(id)); }
+};
+
+/* ============================================================
+   记录归一化：兼容 {id,created_at,...} / {id,properties} / {recordId,fields}
+   ============================================================ */
+const SYS_COLS = ["id","recordId","_id","rowId","createdAt","updatedAt","created_at","user_id"];
+function normRecord(r){
+  if (!r || typeof r !== "object") return null;
+  const id = r.id || r.recordId || r._id || r.rowId;
+  let props;
+  if (r.properties && typeof r.properties === "object") props = r.properties;
+  else if (r.fields && typeof r.fields === "object") props = r.fields;
+  else {
+    props = Object.assign({}, r);
+    SYS_COLS.forEach(k => delete props[k]);
+  }
+  const row = {};
+  Object.keys(props).forEach(k => {
+    if (SYS_COLS.indexOf(k) >= 0) return;
+    row[k] = props[k] == null ? "" : String(props[k]);
+  });
+  return id ? Object.assign({ _id: String(id) }, row) : null;
+}
+function normList(resp){
+  let arr = [];
+  if (Array.isArray(resp)) arr = resp;
+  else if (resp && Array.isArray(resp.records)) arr = resp.records;
+  else if (resp && Array.isArray(resp.rows)) arr = resp.rows;
+  else if (resp && Array.isArray(resp.results)) arr = resp.results;
+  else if (resp && Array.isArray(resp.list)) arr = resp.list;
+  else if (resp && resp.data && Array.isArray(resp.data)) arr = resp.data;
+  return arr.map(normRecord).filter(Boolean);
+}
+
+/* ============================================================
+   数据门面
+   ============================================================ */
+const Data = {
+  mode: "local",          // "library" | "supabase" | "local" —— 目标环境
+  cache: {},              // key -> {rows, error, loading, loaded, sig}
+  listeners: [],
+  poll: null,
+  lastSync: null,
+  syncing: false,
+  currentPage: "overview",
+  lastFail: null,
+
+  /* 当前实际可用的后端 */
+  bk(){
+    if (this.mode === "library" && SDK.db) return "library";
+    if (this.mode === "supabase" && SB.ready()) return "supabase";
+    return "local";
+  },
+  online(){ return this.bk() !== "local"; },
+  cloud(){ return this.bk() === "supabase"; },
+
+  on(key, fn){ this.listeners.push({key, fn}); fn(this.cache[key]); },
+  emit(key){ this.listeners.filter(l => l.key === key).forEach(l => { try { l.fn(this.cache[key]); } catch(e){ console.error(e); } }); },
+  emitAll(){ Object.keys(this.cache).forEach(k => this.emit(k)); },
+
+  /* ---------- 读 ---------- */
+  async load(key, forceOrOpts){
+    const opts = (forceOrOpts && typeof forceOrOpts === "object") ? forceOrOpts : { force: !!forceOrOpts };
+    const force = !!opts.force, silent = !!opts.silent;
+    const c = this.cache[key] = this.cache[key] || { rows: [], error: null, loading: false, loaded: false, sig: "" };
+    c.sig = c.sig || "";
+    if (c.loading && !force) return c;
+
+    const prevSig = c.sig, prevErr = c.error;
+    if (!silent){ c.loading = true; this.emit(key); }
+
+    let ok = true, msg = null, rows = null;
+    try {
+      const bk = this.bk();
+      if (bk === "library"){
+        const dbId = Bind.id(key);
+        if (!dbId) throw new Error("未绑定数据表");
+        rows = [];
+        for (let p = 1; p <= 10; p++){
+          const resp = await SDK.db.query({ databaseId: dbId, page: p, pageSize: 500 });
+          const part = normList(resp);
+          rows = rows.concat(part);
+          if (part.length < 500) break;
+        }
+      } else if (bk === "supabase"){
+        const raw = await SB.list(TABLES[key].sb);
+        rows = (raw || []).map(normRecord).filter(Boolean);
+      } else {
+        rows = this._localRead(key);
+      }
+    } catch(e){
+      ok = false;
+      msg = (e && e.message) ? e.message : String(e);
+    }
+
+    c.loading = false;
+    if (ok){
+      const sig = JSON.stringify(rows);
+      const changed = (sig !== prevSig) || !prevSig || !!prevErr;
+      c.rows = rows; c.sig = sig; c.loaded = true; c.error = null;
+      if (!silent || changed) this.emit(key);
+    } else {
+      if (silent){
+        this.lastFail = msg;                 // 轮询失败：不动界面，只记状态
+      } else {
+        c.error = msg; this.lastFail = msg;
+        this.emit(key);
+        throw new Error(msg);
+      }
+    }
+    return c;
+  },
+  async loadAll(keys){
+    const list = keys || Object.keys(TABLES);
+    await Promise.all(list.map(k => this.load(k).catch(() => null)));
+  },
+
+  /* ---------- 写 ---------- */
+  async add(key, props){
+    const bk = this.bk();
+    if (bk === "library"){
+      const rec = normRecord(await SDK.db.addRecord({ databaseId: Bind.id(key), properties: props }));
+      await this.load(key, true);
+      return rec;
+    }
+    if (bk === "supabase"){
+      const out = await SB.create(TABLES[key].sb, props);
+      await this.load(key, true);
+      return normRecord(Array.isArray(out) ? out[0] : out);
+    }
+    const rows = this._localRead(key);
+    const row = Object.assign({ _id: uid() }, props);
+    rows.push(row); this._localWrite(key, rows);
+    this._localCommit(key, rows);
+    return row;
+  },
+  async update(key, id, props){
+    const bk = this.bk();
+    if (bk === "library"){
+      await SDK.db.updateRecord({ databaseId: Bind.id(key), recordId: id, properties: props });
+      await this.load(key, true); return;
+    }
+    if (bk === "supabase"){
+      await SB.patch(TABLES[key].sb, id, props);
+      await this.load(key, true); return;
+    }
+    const rows = this._localRead(key);
+    const i = rows.findIndex(r => r._id === id);
+    if (i >= 0){ rows[i] = Object.assign({}, rows[i], props); this._localWrite(key, rows); }
+    this._localCommit(key, rows);
+  },
+  async remove(key, id){
+    const bk = this.bk();
+    if (bk === "library"){
+      await SDK.db.deleteRecord({ databaseId: Bind.id(key), recordId: id });
+      await this.load(key, true); return;
+    }
+    if (bk === "supabase"){
+      await SB.destroy(TABLES[key].sb, id);
+      await this.load(key, true); return;
+    }
+    const rows = this._localRead(key).filter(r => r._id !== id);
+    this._localWrite(key, rows);
+    this._localCommit(key, rows);
+  },
+
+  /* ---------- 本地存储 ---------- */
+  _localRead(key){
+    try { return JSON.parse(localStorage.getItem("lw.t." + key) || "[]") || []; }
+    catch(e){ return []; }
+  },
+  _localWrite(key, rows){
+    try { localStorage.setItem("lw.t." + key, JSON.stringify(rows)); }
+    catch(e){ toast("本地存储失败，空间可能不足"); throw e; }
+  },
+  _localCommit(key, rows){
+    this.cache[key] = { rows, error: null, loading: false, loaded: true, sig: JSON.stringify(rows) };
+    this.emit(key);
+  },
+
+  /* ---------- 双向同步（轮询 + 窗口聚焦） ---------- */
+  startPolling(){
+    this.stopPolling();
+    this.poll = setInterval(() => this.softRefresh("poll"), 30000);
+  },
+  stopPolling(){ if (this.poll){ clearInterval(this.poll); this.poll = null; } },
+  async softRefresh(reason){
+    if (this.bk() !== "supabase") return;
+    if (reason === "poll" && document.hidden) return;
+    if (this.syncing) return;
+    const now = Date.now();
+    if (reason === "focus" && this._lastFocus && now - this._lastFocus < 5000) return;
+    if (reason === "focus") this._lastFocus = now;
+
+    this.syncing = true; this.lastFail = null;
+    renderMode();
+    const keys = PAGE_TABLES[this.currentPage] || PAGE_TABLES.overview;
+    try {
+      for (const k of keys){ try { await this.load(k, { force: true, silent: true }); } catch(e){} }
+      this.lastSync = new Date();
+    } finally {
+      this.syncing = false;
+      renderMode();
+    }
+  },
+
+  /* ---------- 导出 / 导入 ---------- */
+  exportLocal(){
+    const out = { _app: "life-workbench", _v: 2, _mode: this.bk(), _time: new Date().toISOString(), tables: {} };
+    Object.keys(TABLES).forEach(k => {
+      out.tables[k] = this.online() ? ((this.cache[k] && this.cache[k].rows) || []) : this._localRead(k);
+    });
+    return out;
+  },
+  async importLocal(data){
+    if (!data || !data.tables) throw new Error("备份文件格式不对");
+    for (const k of Object.keys(TABLES)){
+      if (Array.isArray(data.tables[k]) && data.tables[k].length){
+        if (this.online()){
+          for (const row of data.tables[k]){
+            const props = Object.assign({}, row); delete props._id;
+            await this.add(k, props);
+          }
+        } else {
+          this._localWrite(k, data.tables[k]);
+          this._localCommit(k, data.tables[k]);
+        }
+      }
+    }
+  }
+};
+
+/* ---------- 错误卡片 ---------- */
+function errCard(msg, retryKey){
+  return '<div class="err-card"><span>⚠️ <b>读取失败</b>：' + esc(msg) +
+    '</span><button class="btn small" style="margin-left:auto" onclick="retryLoad(\'' + retryKey + '\')">重试</button></div>';
+}
+window.retryLoad = function(key){ Data.load(key, true).catch(e => toast("仍然失败：" + (e.message || e))); };
+
+/* ---------- 模式徽标 ---------- */
+function renderMode(){
+  const pill = $("#modePill"), txt = $("#modeText");
+  if (!pill || !txt) return;
+  const bk = Data.bk();
+  let cls = "local", text = "";
+
+  if (bk === "library"){
+    cls = "online";
+    text = "资料库在线 · " + Bind.boundKeys().length + "/" + Object.keys(TABLES).length + " 表已绑定";
+  } else if (bk === "supabase"){
+    if (Data.syncing){ cls = "sync"; text = "同步中…"; }
+    else if (Data.lastFail){ cls = "cloud-err"; text = "同步异常 · 点此重试"; }
+    else { cls = "cloud"; text = "云同步 · " + (Data.lastSync ? "已同步 " + hhmm() : (SB.session && SB.session.email) || "已连接"); }
+  } else if (SB.configured()){
+    cls = "warn";
+    text = "云同步待登录 · 点此登录";
+  } else {
+    cls = "local";
+    text = "本地模式 · 数据仅存本机";
+  }
+  pill.className = "pill " + cls;
+  txt.textContent = text;
+
+  const foot = $("#sideFoot");
+  if (foot){
+    if (bk === "supabase") foot.innerHTML = "云同步已开启<br>数据存于 Supabase<br>" + esc((SB.session && SB.session.email) || "");
+    else if (bk === "library") foot.innerHTML = "云端同步已开启<br>资料库改表，页面即时刷新";
+    else if (SB.configured()) foot.innerHTML = "已配置 Supabase，尚未登录。<br>点顶部状态条登录即可云同步。";
+    else foot.innerHTML = "本地模式：数据只存在这台设备。<br>点顶部「数据源设置」接入云同步。";
+  }
+  const intro = $("#bindIntro");
+  if (intro) intro.innerHTML = Data.mode === "library"
+    ? "当前在<b>资料库在线环境</b>。为每个模块粘贴对应的<b>表格 ID</b>，保存后即可在线读写。"
+    : "推荐用 <b>Supabase 云同步</b>：数据存在你自己的数据库里，换设备、换浏览器打开同一网址，登录后数据都在。";
+}
+</script>
+<script>
+"use strict";
+/* ============================================================
+   业务模块
+   ============================================================ */
+
+/* ---------- 导航 ---------- */
+const PAGES = [
+  { id:"overview", zh:"今日概览", en:"OVERVIEW", ico:"今" },
+  { id:"money",    zh:"记账理财", en:"MONEY",    ico:"账" },
+  { id:"habit",    zh:"习惯健康", en:"HABIT",    ico:"习" },
+  { id:"fit",      zh:"减脂健身", en:"FIT",      ico:"身" },
+  { id:"sched",    zh:"日程统筹", en:"SCHEDULE", ico:"程" },
+  { id:"buy",      zh:"待买清单", en:"WISH",     ico:"买" },
+  { id:"media",    zh:"书影音",   en:"LIBRARY",  ico:"藏" },
+  { id:"orchid",   zh:"狐狸之火", en:"ORCHID",   ico:"兰" }
+];
+function buildNav(){
+  $("#sideNav").innerHTML = PAGES.map(p =>
+    '<button data-pg="' + p.id + '"><span class="dot"></span>' + p.zh + '</button>').join("");
+  $("#bottomNav").innerHTML = PAGES.map(p =>
+    '<button data-pg="' + p.id + '"><span class="ico">' + p.ico + '</span>' + p.zh.slice(0,2) + '</button>').join("");
+  $$("[data-pg]").forEach(b => b.addEventListener("click", () => gotoPage(b.dataset.pg)));
+}
+function gotoPage(id){
+  $$("section.page").forEach(s => s.classList.toggle("on", s.id === "page-" + id));
+  $$("[data-pg]").forEach(b => b.classList.toggle("on", b.dataset.pg === id));
+  window.scrollTo({ top: 0 });
+  /* 切页时顺手同步一下本页用到的表（不打扰：数据没变就不重渲染） */
+  if (typeof Data !== "undefined"){
+    Data.currentPage = id;
+    if (Data.bk() === "supabase") Data.softRefresh("page");
+  }
+}
+
+/* ---------- 今日一句 ---------- */
+const QUOTES = [
+  ["把日子过成诗，把账记成数。", "日常集"],
+  ["一饮一啄，皆是生活。", "日常集"],
+  ["身体是长期资产，记得折旧检修。", "日常集"],
+  ["小事日日做，就是大事。", "日常集"],
+  ["钱要花在刀刃上，时间也是。", "日常集"],
+  ["慢慢来，比较快。", "日常集"],
+  ["今天也要好好吃饭。", "日常集"],
+  ["植物不急，你也不必急。", "日常集"],
+  ["记录本身，就是对抗遗忘。", "日常集"],
+  ["所有的大日子，都是小日子堆出来的。", "日常集"],
+  ["收支平衡，心态也要平衡。", "日常集"],
+  ["少买一件，多存一分，多一分从容。", "日常集"],
+  ["好习惯是复利，坏习惯也是。", "日常集"],
+  ["看完的书才真正属于你。", "日常集"],
+  ["先完成，再完美。", "日常集"]
+];
+
+/* ============================================================
+   模块一：记账理财
+   ============================================================ */
+const CATS = { "餐饮":"#b96a4b", "交通":"#5b7d8f", "购物":"#a5636f", "居住":"#a8843c",
+  "医疗":"#7a8a5a", "娱乐":"#8a6fae", "学习":"#5f7355", "人情":"#c98a3d", "其他":"#8a857c" };
+const INCOME_CATS = { "工资":"#5f7355", "理财":"#a8843c", "报销":"#5b7d8f", "其他收入":"#8a857c" };
+const Money = {
+  viewMonth: monthStr(),
+  filter: "",
+  init(){
+    $("#exDate").value = todayStr();
+    const fill = () => {
+      const t = $("#exType").value;
+      const src = t === "收入" ? INCOME_CATS : CATS;
+      $("#exCat").innerHTML = Object.keys(src).map(c => '<option>' + c + '</option>').join("");
+    };
+    fill();
+    $("#exType").addEventListener("change", fill);
+    $("#mPrev").addEventListener("click", () => { this.shiftMonth(-1); });
+    $("#mNext").addEventListener("click", () => { this.shiftMonth(1); });
+    $("#exSave").addEventListener("click", () => this.save());
+    $("#mBudgetV").addEventListener("click", () => this.editBudget());
+    Data.on("expense", () => this.render());
+    Data.on("budget", () => this.render());
+  },
+  shiftMonth(d){
+    const [y, m] = this.viewMonth.split("-").map(Number);
+    const dt = new Date(y, m - 1 + d, 1);
+    this.viewMonth = dt.getFullYear() + "-" + pad(dt.getMonth() + 1);
+    this.render();
+  },
+  async save(){
+    const amt = num($("#exAmt").value);
+    if (amt == null || amt <= 0){ toast("请填写金额"); return; }
+    const props = {
+      date: $("#exDate").value || todayStr(),
+      type: $("#exType").value,
+      category: $("#exCat").value,
+      amount: String(amt),
+      note: $("#exNote").value.trim()
+    };
+    try {
+      await Data.add("expense", props);
+      $("#exAmt").value = ""; $("#exNote").value = "";
+      toast("已记入 " + props.date.slice(5));
+    } catch(e){ toast("保存失败：" + (e.message || e)); }
+  },
+  async editBudget(){
+    const c = Data.cache.budget || { rows: [] };
+    const cur = (c.rows || []).find(r => r.month === this.viewMonth);
+    const v = prompt("设置 " + this.viewMonth + " 的支出预算（元）：", cur ? cur.amount : "");
+    if (v == null) return;
+    const n = num(v);
+    if (n == null || n < 0){ toast("数字不合法"); return; }
+    try {
+      if (cur) await Data.update("budget", cur._id, { month: this.viewMonth, amount: String(n) });
+      else await Data.add("budget", { month: this.viewMonth, amount: String(n) });
+      toast("预算已更新");
+    } catch(e){ toast("保存失败：" + (e.message || e)); }
+  },
+  monthRows(c, ym){
+    return (c && c.rows || []).filter(r => (r.date || "").slice(0,7) === ym);
+  },
+  render(){
+    const cE = Data.cache.expense, cB = Data.cache.budget;
+    $("#mLabel").textContent = this.viewMonth.replace("-", " 年 ") + " 月";
+    $("#structMonth").textContent = this.viewMonth;
+    if (cE && cE.error){ $("#ledgerBox").innerHTML = errCard(cE.error, "expense"); }
+    if (cB && cB.error && (!cB.loaded || !cB.rows.length)){}
+
+    const rows = this.monthRows(cE, this.viewMonth).slice().sort((a,b) => (b.date||"").localeCompare(a.date||""));
+    const out = rows.filter(r => r.type !== "收入");
+    const inc = rows.filter(r => r.type === "收入");
+    const outSum = out.reduce((s,r) => s + (num(r.amount)||0), 0);
+    const inSum = inc.reduce((s,r) => s + (num(r.amount)||0), 0);
+    $("#mOut").textContent = "¥" + fmt(outSum);
+    $("#mIn").textContent = "¥" + fmt(inSum);
+    $("#mNet").textContent = (inSum - outSum >= 0 ? "+" : "") + fmt(inSum - outSum);
+    $("#mNet").className = inSum - outSum >= 0 ? "moss" : "clay";
+
+    const bud = (cB && cB.rows || []).find(r => r.month === this.viewMonth);
+    const bv = bud ? (num(bud.amount)||0) : 0;
+    $("#mBudgetV").textContent = bv ? "¥" + fmt(bv) : "未设置";
+    $("#mBudgetHint").textContent = bud ? "" : "";
+    const pct = bv ? Math.min(100, outSum / bv * 100) : 0;
+    const bar = $("#mBudgetBar");
+    bar.className = "bar" + (bv && outSum > bv ? " over" : (bv && pct > 80 ? " warn" : ""));
+    bar.firstElementChild.style.width = pct + "%";
+    $("#mBudgetV").nextElementSibling && null;
+
+    /* 消费结构 */
+    const byCat = {};
+    out.forEach(r => { byCat[r.category || "其他"] = (byCat[r.category || "其他"]||0) + (num(r.amount)||0); });
+    const catKeys = Object.keys(byCat).sort((a,b) => byCat[b]-byCat[a]);
+    $("#structBox").innerHTML = catKeys.length ? catKeys.map(k =>
+      '<div class="struct-row"><span class="lb">' + esc(k) + '</span><span class="trk"><i style="width:' +
+      Math.max(3, byCat[k]/outSum*100) + '%;background:' + (CATS[k]||"#8a857c") + '"></i></span><span class="pc">¥' +
+      fmt(byCat[k]) + " · " + Math.round(byCat[k]/outSum*100) + '%</span></div>').join("")
+      : '<div class="empty"><div class="zh">虚 位 以 待</div>本月还没有支出记录</div>';
+
+    /* 月度对比 */
+    const prevYM = (() => { const [y,m] = this.viewMonth.split("-").map(Number); const d = new Date(y, m-2, 1); return d.getFullYear()+"-"+pad(d.getMonth()+1); })();
+    const prevRows = this.monthRows(cE, prevYM).filter(r => r.type !== "收入");
+    const prevSum = prevRows.reduce((s,r) => s + (num(r.amount)||0), 0);
+    const allCats = Array.from(new Set(Object.keys(byCat).concat(prevRows.map(r => r.category||"其他"))));
+    const prevByCat = {};
+    prevRows.forEach(r => { prevByCat[r.category||"其他"] = (prevByCat[r.category||"其他"]||0)+(num(r.amount)||0); });
+    const maxC = Math.max(1, ...allCats.map(k => Math.max(byCat[k]||0, prevByCat[k]||0)));
+    $("#cmpBox").innerHTML = allCats.length ? allCats.map(k =>
+      '<div class="cmp-row"><span class="lb">' + esc(k) + '</span><span class="col">' +
+      '<span class="trk"><i style="width:' + (byCat[k]||0)/maxC*100 + '%;background:#b96a4b"></i></span>' +
+      '<span class="trk"><i style="width:' + (prevByCat[k]||0)/maxC*100 + '%;background:#ddd6c6"></i></span></span>' +
+      '<span class="pc" style="width:100px">¥' + fmt(byCat[k]||0) + " / " + fmt(prevByCat[k]||0) + '</span></div>').join("") +
+      '<div style="margin-top:10px;font-size:12px;color:var(--soft)">本月支出 <b class="clay">¥' + fmt(outSum) + '</b>　·　上月 <b>¥' + fmt(prevSum) +
+      '</b>　·　' + (outSum <= prevSum ? "比上月省 ¥" + fmt(prevSum-outSum) + " 👏" : "比上月多 ¥" + fmt(outSum-prevSum)) + '</div>'
+      : '<div class="empty"><div class="zh">虚 位 以 待</div>攒够两个月数据后自动出现</div>';
+
+    /* 筛选 chips */
+    const chips = ['<button class="chip' + (this.filter===""?" on":"") + '" data-cf="">全部</button>']
+      .concat(catKeys.map(k => '<button class="chip' + (this.filter===k?" on":"") + '" data-cf="' + esc(k) + '">' + esc(k) + '</button>'));
+    $("#catChips").innerHTML = chips.join("");
+    $$("#catChips .chip").forEach(ch => ch.addEventListener("click", () => { this.filter = ch.dataset.cf; this.render(); }));
+
+    /* 流水 */
+    const shown = this.filter ? rows.filter(r => r.category === this.filter) : rows;
+    if (cE && cE.error && !rows.length){
+      $("#ledgerBox").innerHTML = errCard(cE.error, "expense");
+    } else if (!shown.length){
+      $("#ledgerBox").innerHTML = '<div class="empty"><div class="zh">虚 位 以 待</div>这个月还没有记录</div>';
+    } else {
+      const groups = {};
+      shown.forEach(r => { (groups[r.date] = groups[r.date] || []).push(r); });
+      $("#ledgerBox").innerHTML = Object.keys(groups).sort().reverse().map(d => {
+        const dayOut = groups[d].filter(r=>r.type!=="收入").reduce((s,r)=>s+(num(r.amount)||0),0);
+        return '<div class="rec-group"><div class="rec-day"><span>' + d.slice(5).replace("-","/") + ' ' + wdCN(d) +
+          '</span><span>支出 ¥' + fmt(dayOut) + '</span></div>' +
+          groups[d].map(r => {
+            const isin = r.type === "收入";
+            const color = isin ? (INCOME_CATS[r.category]||"#5f7355") : (CATS[r.category]||"#8a857c");
+            return '<div class="rec-row" data-rid="' + r._id + '"><span class="cat" style="background:' + color + '"></span>' +
+              '<span class="name">' + esc(r.category) + (r.note ? '<small>' + esc(r.note) + '</small>' : '') + '</span>' +
+              '<span class="amt' + (isin?" in":"") + '">' + (isin?"+":"-") + fmt(num(r.amount)||0) + '</span>' +
+              '<span class="ops"><button class="icon-btn" data-act="del" title="删除">✕</button></span></div>';
+          }).join("") + '</div>';
+      }).join("");
+      $$("#ledgerBox [data-act=del]").forEach(b => b.addEventListener("click", async () => {
+        const rid = b.closest(".rec-row").dataset.rid;
+        try { await Data.remove("expense", rid); toast("已删除"); }
+        catch(e){ toast("删除失败：" + (e.message||e)); }
+      }));
+    }
+  }
+};
+function wdCN(d){
+  const w = new Date(d + "T00:00:00").getDay();
+  return "日一二三四五六"[w] ? "周" + "日一二三四五六"[w] : "";
+}
+
+/* ============================================================
+   模块二：习惯健康
+   ============================================================ */
+const Habit = {
+  init(){
+    $("#hbAdd").addEventListener("click", () => this.add());
+    $("#hbType").addEventListener("change", () => {
+      $("#hbTargetWrap").style.display = $("#hbType").value === "check" ? "none" : "flex";
+    });
+    Data.on("habit", () => this.render());
+    Data.on("habitLog", () => this.render());
+  },
+  async add(){
+    const name = $("#hbName").value.trim();
+    if (!name){ toast("给习惯起个名字"); return; }
+    const type = $("#hbType").value;
+    const props = { name, type, target: $("#hbTarget").value || "", unit: $("#hbUnit").value.trim() || "", createdAt: todayStr() };
+    try {
+      await Data.add("habit", props);
+      $("#hbName").value = ""; $("#hbTarget").value = ""; $("#hbUnit").value = "";
+      toast("习惯已添加");
+    } catch(e){ toast("保存失败：" + (e.message||e)); }
+  },
+  todayLog(hid){
+    const c = Data.cache.habitLog;
+    return (c && c.rows || []).find(r => r.habitId === hid && r.date === todayStr());
+  },
+  async toggleCheck(h){
+    const log = this.todayLog(h._id);
+    try {
+      if (log) await Data.remove("habitLog", log._id);
+      else await Data.add("habitLog", { habitId: h._id, date: todayStr(), value: "1" });
+    } catch(e){ toast("操作失败：" + (e.message||e)); }
+  },
+  async setCount(h, delta){
+    const log = this.todayLog(h._id);
+    const cur = log ? (num(log.value)||0) : 0;
+    const next = Math.max(0, cur + delta);
+    try {
+      if (log) await Data.update("habitLog", log._id, { habitId: h._id, date: todayStr(), value: String(next) });
+      else if (next > 0) await Data.add("habitLog", { habitId: h._id, date: todayStr(), value: String(next) });
+    } catch(e){ toast("操作失败：" + (e.message||e)); }
+  },
+  async saveValue(h, v){
+    const log = this.todayLog(h._id);
+    try {
+      if (log) await Data.update("habitLog", log._id, { habitId: h._id, date: todayStr(), value: String(v) });
+      else await Data.add("habitLog", { habitId: h._id, date: todayStr(), value: String(v) });
+    } catch(e){ toast("操作失败：" + (e.message||e)); }
+  },
+  async remove(h){
+    if (!confirm("删除习惯「" + h.name + "」及其打卡记录？")) return;
+    try {
+      const logs = (Data.cache.habitLog && Data.cache.habitLog.rows || []).filter(r => r.habitId === h._id);
+      for (const l of logs) await Data.remove("habitLog", l._id);
+      await Data.remove("habit", h._id);
+      toast("已删除");
+    } catch(e){ toast("删除失败：" + (e.message||e)); }
+  },
+  heat(h){
+    const logs = (Data.cache.habitLog && Data.cache.habitLog.rows || []).filter(r => r.habitId === h._id);
+    const map = {};
+    logs.forEach(l => { const v = num(l.value); map[l.date] = Math.max(map[l.date]||0, v==null?1:v); });
+    const target = num(h.target) || 1;
+    let html = '<div class="heat-wrap"><div class="heat">';
+    for (let i = 29; i >= 0; i--){
+      const d = addDays(todayStr(), -i);
+      const v = map[d] || 0;
+      const lvl = v <= 0 ? "" : (v >= target ? "l3" : (v >= target/2 ? "l2" : "l1"));
+      html += '<i class="' + lvl + (i===0 ? " today" : "") + '" title="' + d + (v ? "：" + v + (h.unit||"") : "") + '"></i>';
+    }
+    return html + '</div><div class="heat-legend">30 天　<i style="background:#ede9df"></i><i style="background:#cfd8c3"></i><i style="background:#a3b78e"></i><i style="background:#5f7355"></i>　<span style="margin-left:auto">今天</span></div></div>';
+  },
+  render(){
+    const c = Data.cache.habit;
+    $("#hbTodayLabel").textContent = todayStr().slice(5).replace("-","/") + " " + wdCN(todayStr());
+    if (c && c.error){ $("#habitList").innerHTML = errCard(c.error, "habit"); return; }
+    const habits = (c && c.rows || []);
+    if (!habits.length){
+      $("#habitList").innerHTML = '<div class="empty"><div class="zh">虚 位 以 待</div>从一个小习惯开始，比如「喝 8 杯水」</div>';
+      return;
+    }
+    $("#habitList").innerHTML = habits.map(h => {
+      const log = this.todayLog(h._id);
+      const v = log ? (num(log.value)||0) : 0;
+      let act = "";
+      if (h.type === "check"){
+        act = '<button class="tick' + (v>0?" on":"") + '" data-hb="' + h._id + '" data-op="check">✓</button>';
+      } else if (h.type === "count"){
+        act = '<div class="stepper"><button data-hb="' + h._id + '" data-op="minus">−</button>' +
+          '<span class="val">' + v + ' / ' + (h.target||"—") + '<small>' + esc(h.unit||"") + '</small></span>' +
+          '<button data-hb="' + h._id + '" data-op="plus">＋</button></div>';
+      } else {
+        act = '<div class="hm-act"><input type="number" step="0.1" value="' + (v||"") + '" placeholder="—" data-hb="' + h._id + '" data-op="val"> <small style="color:var(--soft)">' + esc(h.unit||"") + '</small></div>';
+      }
+      const typeName = h.type === "check" ? "每日打卡" : (h.type === "count" ? "计数" : "数值");
+      return '<div class="habit-row"><div class="hm-name"><b>' + esc(h.name) + '</b><small>' + typeName +
+        (h.target && h.type !== "check" ? " · 目标 " + esc(h.target) + esc(h.unit||"") : "") + '</small></div>' +
+        '<div class="hm-act">' + act + '</div>' +
+        '<button class="icon-btn" data-hb="' + h._id + '" data-op="del" title="删除习惯">✕</button></div>' +
+        this.heat(h);
+    }).join("");
+    const find = id => habits.find(h => h._id === id);
+    $$("#habitList [data-op]").forEach(el => el.addEventListener("click", async () => {
+      const h = find(el.dataset.hb); if (!h) return;
+      const op = el.dataset.op;
+      if (op === "check") await this.toggleCheck(h);
+      else if (op === "plus") await this.setCount(h, 1);
+      else if (op === "minus") await this.setCount(h, -1);
+      else if (op === "del") await this.remove(h);
+    }));
+    $$("#habitList input[data-op=val]").forEach(inp => inp.addEventListener("change", async () => {
+      const h = find(inp.dataset.hb); if (!h) return;
+      const v = num(inp.value);
+      if (v == null) return;
+      await this.saveValue(h, v);
+    }));
+  }
+};
+</script>
+<script>
+"use strict";
+/* ============================================================
+   模块三：减脂健身
+   ============================================================ */
+const Fit = {
+  init(){
+    $("#ftDate").value = todayStr();
+    $("#ftSave").addEventListener("click", () => this.save());
+    $("#ftGoalV").addEventListener("click", () => this.editGoal());
+    Data.on("fitness", () => this.render());
+    Data.on("plan", () => this.renderPlan());
+    Data.on("goal", () => this.render());
+  },
+  async save(){
+    const w = num($("#ftW").value);
+    if (w == null || w <= 0){ toast("请填写体重"); return; }
+    const props = {
+      date: $("#ftDate").value || todayStr(),
+      weight: String(w),
+      bodyFat: $("#ftF").value || "",
+      intake: $("#ftIn").value || "",
+      outtake: $("#ftOut").value || "",
+      note: $("#ftNote").value.trim()
+    };
+    try {
+      await Data.add("fitness", props);
+      $("#ftW").value = ""; $("#ftF").value = ""; $("#ftIn").value = ""; $("#ftOut").value = ""; $("#ftNote").value = "";
+      toast("已记录");
+    } catch(e){ toast("保存失败：" + (e.message||e)); }
+  },
+  async editGoal(){
+    const c = Data.cache.goal;
+    const cur = (c && c.rows || []).find(r => r.key === "targetWeight");
+    const v = prompt("目标体重（kg）：", cur ? cur.value : "");
+    if (v == null) return;
+    const n = num(v);
+    if (n == null || n <= 0){ toast("数字不合法"); return; }
+    try {
+      if (cur) await Data.update("goal", cur._id, { key: "targetWeight", value: String(n) });
+      else await Data.add("goal", { key: "targetWeight", value: String(n) });
+      toast("目标已更新");
+    } catch(e){ toast("保存失败：" + (e.message||e)); }
+  },
+  render(){
+    const c = Data.cache.fitness, g = Data.cache.goal;
+    if (c && c.error){ $("#ftChart").innerHTML = errCard(c.error, "fitness"); return; }
+    const rows = (c && c.rows || []).filter(r => num(r.weight) != null).slice()
+      .sort((a,b) => (a.date||"").localeCompare(b.date||""));
+    if (!rows.length){
+      $("#ftWeight").innerHTML = "— <small>kg</small>"; $("#ftMA").innerHTML = "— <small>kg</small>";
+      $("#ftBMI").textContent = "—"; $("#ftGoalPct").textContent = "—"; $("#ftDeficit").textContent = "—";
+      $("#ftChart").innerHTML = '<div class="empty"><div class="zh">虚 位 以 待</div>记一次体重，趋势图就会出现</div>';
+      return;
+    }
+    const last = rows[rows.length-1];
+    const last7 = rows.slice(-7);
+    const ma = last7.reduce((s,r) => s + num(r.weight), 0) / last7.length;
+    $("#ftWeight").innerHTML = fmt(num(last.weight)) + " <small>kg</small>";
+    $("#ftMA").innerHTML = fmt(ma) + " <small>kg</small>";
+    const goalRows = (g && g.rows || []);
+    const goal = goalRows.find(r => r.key === "targetWeight");
+    const hRow = goalRows.find(r => r.key === "height");
+    const height = (hRow && num(hRow.value)) || 1.62; /* 默认身高 1.62m，目标表加 key=height 即可调整 */
+    const bmi = num(last.weight) / height / height;
+    $("#ftBMI").textContent = fmt(bmi) + (bmi < 18.5 ? " 偏低" : (bmi < 24 ? " 正常" : (bmi < 28 ? " 偏高" : " 肥胖")));
+    const gv = goal ? num(goal.value) : null;
+    $("#ftGoalV").textContent = gv ? gv + " kg" : "未设置";
+    if (gv){
+      const start = num(rows[0].weight);
+      const cur = num(last.weight);
+      const pct = start > gv ? Math.max(0, Math.min(100, (start - cur) / (start - gv) * 100)) : 0;
+      $("#ftGoalPct").textContent = Math.round(pct) + "%";
+    } else $("#ftGoalPct").textContent = "—";
+
+    /* 热量缺口：近 7 天有摄入和消耗的记录 */
+    const withBoth = (c.rows||[]).filter(r => num(r.intake) != null && num(r.outtake) != null && r.date >= addDays(todayStr(), -6));
+    $("#ftDeficit").textContent = withBoth.length
+      ? fmt(withBoth.reduce((s,r) => s + (num(r.outtake)-num(r.intake)), 0) / withBoth.length) + " kcal/日"
+      : "填了摄入和消耗才会计算";
+
+    this.chart(rows);
+  },
+  chart(rows){
+    const W = 680, H = 210, PL = 40, PR = 14, PT = 14, PB = 24;
+    const data = rows.slice(-45);
+    const hasF = data.some(r => num(r.bodyFat) != null);
+    const ws = data.map(r => num(r.weight));
+    let lo = Math.min(...ws), hi = Math.max(...ws);
+    if (hasF){ /* 体脂单独右轴 */ }
+    const padV = Math.max(0.4, (hi - lo) * 0.15);
+    lo -= padV; hi += padV;
+    const X = i => PL + (W - PL - PR) * (data.length === 1 ? 0.5 : i / (data.length - 1));
+    const Y = v => PT + (H - PT - PB) * (1 - (v - lo) / (hi - lo));
+    let svg = '<svg viewBox="0 0 ' + W + " " + H + '" style="width:100%;height:auto">';
+    /* 网格 */
+    for (let g = 0; g <= 3; g++){
+      const y = PT + (H - PT - PB) * g / 3;
+      svg += '<line x1="' + PL + '" y1="' + y + '" x2="' + (W-PR) + '" y2="' + y + '" stroke="#e7e2d8" stroke-width="1"/>';
+      svg += '<text x="' + (PL-6) + '" y="' + (y+4) + '" text-anchor="end" font-size="10" fill="#8a857c">' + fmt(hi - (hi-lo)*g/3) + '</text>';
+    }
+    /* 体脂（若有，右轴虚线） */
+    if (hasF){
+      const fs = data.map(r => num(r.bodyFat)).filter(v => v != null);
+      const flo = Math.min(...fs), fhi = Math.max(...fs);
+      const fpad = Math.max(0.5, (fhi-flo)*0.15);
+      const FY = v => PT + (H-PT-PB) * (1 - (v - (flo-fpad)) / ((fhi+fpad) - (flo-fpad)));
+      let path = "";
+      data.forEach((r, i) => { const f = num(r.bodyFat); if (f != null) path += (path ? " L" : "M") + X(i).toFixed(1) + " " + FY(f).toFixed(1); });
+      svg += '<path d="' + path + '" fill="none" stroke="#5b7d8f" stroke-width="1.5" stroke-dasharray="4 4" opacity=".8"/>';
+    }
+    /* 体重均线 */
+    if (data.length >= 4){
+      let mp = "";
+      for (let i = 0; i < data.length; i++){
+        const s = Math.max(0, i - 3), e = i;
+        const seg = data.slice(s, e + 1);
+        const m = seg.reduce((a, r) => a + num(r.weight), 0) / seg.length;
+        mp += (mp ? " L" : "M") + X(i).toFixed(1) + " " + Y(m).toFixed(1);
+      }
+      svg += '<path d="' + mp + '" fill="none" stroke="#5f7355" stroke-width="2.5" stroke-linecap="round" opacity=".9"/>';
+    }
+    /* 体重折线 + 点 */
+    let path = "";
+    data.forEach((r, i) => { path += (path ? " L" : "M") + X(i).toFixed(1) + " " + Y(num(r.weight)).toFixed(1); });
+    svg += '<path d="' + path + '" fill="none" stroke="#b96a4b" stroke-width="2"/>';
+    data.forEach((r, i) => {
+      svg += '<circle cx="' + X(i).toFixed(1) + '" cy="' + Y(num(r.weight)).toFixed(1) + '" r="3" fill="#fffdf9" stroke="#b96a4b" stroke-width="1.6"><title>' + r.date + " · " + fmt(num(r.weight)) + 'kg</title></circle>';
+    });
+    /* 首末日期 */
+    svg += '<text x="' + PL + '" y="' + (H-6) + '" font-size="10" fill="#8a857c">' + data[0].date.slice(5) + '</text>';
+    svg += '<text x="' + (W-PR) + '" y="' + (H-6) + '" text-anchor="end" font-size="10" fill="#8a857c">' + data[data.length-1].date.slice(5) + '</text>';
+    svg += '</svg>';
+    $("#ftChart").innerHTML = svg;
+  },
+  renderPlan(){
+    const c = Data.cache.plan;
+    if (c && c.error){ $("#planBox").innerHTML = errCard(c.error, "plan"); return; }
+    const days = ["一","二","三","四","五","六","日"];
+    const map = {};
+    (c && c.rows || []).forEach(r => { if (r.day) map[r.day] = r; });
+    $("#planBox").innerHTML = days.map(d => {
+      const row = map[d];
+      const content = row ? (row.content || "") : "";
+      return '<div class="plan-row" data-day="' + d + '" data-rid="' + (row ? row._id : "") + '">' +
+        '<span class="d">周' + d + '</span><input type="text" value="' + esc(content) + '" placeholder="— 休息或安排 —" maxlength="50"></div>';
+    }).join("");
+    $$("#planBox .plan-row input").forEach(inp => inp.addEventListener("change", async () => {
+      const pr = inp.closest(".plan-row");
+      const day = pr.dataset.day, rid = pr.dataset.rid, v = inp.value.trim();
+      try {
+        if (rid) await Data.update("plan", rid, { day, content: v });
+        else if (v) await Data.add("plan", { day, content: v });
+        toast("周" + day + "已保存");
+      } catch(e){ toast("保存失败：" + (e.message||e)); }
+    }));
+  }
+};
+
+/* ============================================================
+   模块四：日程统筹
+   ============================================================ */
+const Sched = {
+  hideDone: false,
+  init(){
+    $("#scDate").value = todayStr();
+    $("#scSave").addEventListener("click", () => this.save());
+    $("#scHideDone").addEventListener("change", () => { this.hideDone = $("#scHideDone").checked; this.render(); });
+    Data.on("schedule", () => this.render());
+  },
+  async save(){
+    const title = $("#scTitle").value.trim();
+    if (!title){ toast("写点什么吧"); return; }
+    const props = {
+      date: $("#scDate").value || todayStr(),
+      time: $("#scTime").value || "",
+      title,
+      place: $("#scPlace").value.trim(),
+      note: "",
+      done: "否"
+    };
+    try {
+      await Data.add("schedule", props);
+      $("#scTitle").value = ""; $("#scTime").value = ""; $("#scPlace").value = "";
+      toast("已加入日程");
+    } catch(e){ toast("保存失败：" + (e.message||e)); }
+  },
+  render(){
+    const c = Data.cache.schedule;
+    if (c && c.error){ $("#schedBox").innerHTML = errCard(c.error, "schedule"); return; }
+    let rows = (c && c.rows || []).slice().sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
+    const today = todayStr();
+    const groups = {};
+    rows.forEach(r => { (groups[r.date] = groups[r.date] || []).push(r); });
+    const dates = Object.keys(groups).sort();
+    /* 未来的在前，过去的沉底 */
+    const future = dates.filter(d => d >= today);
+    const past = dates.filter(d => d < today).reverse();
+    const ordered = future.concat(past);
+    if (!ordered.length){
+      $("#schedBox").innerHTML = '<div class="empty"><div class="zh">虚 位 以 待</div>日程是空的，也是好事</div>';
+      return;
+    }
+    $("#schedBox").innerHTML = ordered.map(d => {
+      let items = groups[d];
+      if (this.hideDone) items = items.filter(r => r.done !== "是");
+      if (!items.length) return "";
+      const isPast = d < today;
+      return '<div class="sched-day' + (isPast ? " past" : "") + '"><div class="dh">' +
+        '<span class="dt">' + d.slice(0,4) + " / " + d.slice(5).replace("-","/") + '</span><span class="dw">' + wdCN(d) +
+        (isPast ? " · 已过" : (d === today ? " · 今天" : "")) + '</span><span class="cnt">' + items.length + ' 项</span></div>' +
+        items.map(r => {
+          const done = r.done === "是";
+          const overdue = isPast && !done;
+          return '<div class="sched-item' + (done ? " done" : "") + (overdue ? " past-due" : "") + '" data-rid="' + r._id + '">' +
+            '<button class="pill-done' + (done ? " on" : "") + '" data-act="done">✓</button>' +
+            '<span class="tm' + (r.time ? "" : " none") + '">' + esc(r.time || "—") + '</span>' +
+            '<span class="tt"><b>' + esc(r.title) + '</b>' + (r.place ? '<small>📍' + esc(r.place) + '</small>' : '') + '</span>' +
+            '<span class="ops" style="display:flex"><button class="icon-btn" data-act="del">✕</button></span></div>';
+        }).join("") + '</div>';
+    }).join("");
+    $$("#schedBox [data-act]").forEach(b => b.addEventListener("click", async () => {
+      const item = b.closest(".sched-item");
+      const rid = item.dataset.rid;
+      const row = (Data.cache.schedule.rows || []).find(r => r._id === rid);
+      if (!row) return;
+      try {
+        if (b.dataset.act === "done"){
+          await Data.update("schedule", rid, { date: row.date, time: row.time, title: row.title, place: row.place, note: row.note||"", done: row.done === "是" ? "否" : "是" });
+        } else {
+          if (!confirm("删除这条日程？")) return;
+          await Data.remove("schedule", rid);
+        }
+      } catch(e){ toast("操作失败：" + (e.message||e)); }
+    }));
+  }
+};
+
+/* ============================================================
+   模块五：待买清单
+   ============================================================ */
+const Buy = {
+  init(){
+    $("#bySave").addEventListener("click", () => this.save());
+    Data.on("shopping", () => this.render());
+  },
+  async save(){
+    const name = $("#byName").value.trim();
+    if (!name){ toast("买什么呢"); return; }
+    const props = {
+      name,
+      price: $("#byPrice").value || "0",
+      priority: $("#byPri").value,
+      bought: "否",
+      note: ""
+    };
+    try {
+      await Data.add("shopping", props);
+      $("#byName").value = ""; $("#byPrice").value = "";
+      toast("已加入清单");
+    } catch(e){ toast("保存失败：" + (e.message||e)); }
+  },
+  render(){
+    const c = Data.cache.shopping;
+    if (c && c.error){ $("#buyBox").innerHTML = errCard(c.error, "shopping"); return; }
+    const rows = (c && c.rows || []);
+    const pending = rows.filter(r => r.bought !== "是");
+    const bought = rows.filter(r => r.bought === "是");
+    const sum = pending.reduce((s,r) => s + (num(r.price)||0), 0);
+    $("#bySum").innerHTML = pending.length ? "待买 <b>" + pending.length + "</b> 项 · 合计约 <b>¥" + fmt(sum) + "</b>　·　已买 " + bought.length + " 件" : "";
+    if (!rows.length){
+      $("#buyBox").innerHTML = '<div class="empty"><div class="zh">清 清 爽 爽</div>清单是空的，钱包很安全</div>';
+      return;
+    }
+    const PRI_COLOR = { "高":"#b04a3e", "中":"#a8843c", "低":"#8a857c" };
+    const rowHtml = r => {
+      const done = r.bought === "是";
+      return '<div class="buy-row' + (done ? " bought" : "") + '" data-rid="' + r._id + '">' +
+        '<span class="pri" style="background:' + (PRI_COLOR[r.priority]||"#8a857c") + '"></span>' +
+        '<span class="nm"><b>' + esc(r.name) + '</b><small>优先级：' + esc(r.priority||"中") + '</small></span>' +
+        '<span class="pr">¥' + fmt(num(r.price)||0) + '</span>' +
+        '<button class="pill-done' + (done ? " on" : "") + '" data-act="bought">✓</button>' +
+        '<button class="icon-btn" data-act="del">✕</button></div>';
+    };
+    $("#buyBox").innerHTML =
+      (pending.length ? pending.map(rowHtml).join("") : '<div class="empty" style="padding:14px 0">待买清空啦 🎉</div>') +
+      (bought.length ? '<div style="margin-top:14px;font-size:11px;color:var(--soft);letter-spacing:2px">已 买 归 档</div>' + bought.map(rowHtml).join("") : "");
+    $$("#buyBox [data-act]").forEach(b => b.addEventListener("click", async () => {
+      const rid = b.closest(".buy-row").dataset.rid;
+      const row = rows.find(r => r._id === rid);
+      if (!row) return;
+      try {
+        if (b.dataset.act === "bought"){
+          await Data.update("shopping", rid, { name: row.name, price: row.price, priority: row.priority||"中", bought: row.bought === "是" ? "否" : "是", note: row.note||"" });
+        } else {
+          if (!confirm("删除「" + row.name + "」？")) return;
+          await Data.remove("shopping", rid);
+        }
+      } catch(e){ toast("操作失败：" + (e.message||e)); }
+    }));
+  }
+};
+</script>
+<script>
+"use strict";
+/* ============================================================
+   模块六：书影音收藏
+   ============================================================ */
+const MD_COLORS = { "书":["#7d6b52","#5f7355"], "影":["#5b7d8f","#3f5e70"], "音":["#a5636f","#8a4d5c"] };
+const Media = {
+  view: "wall",
+  filter: "",
+  init(){
+    $("#mdSave").addEventListener("click", () => this.save());
+    $("#mdViewWall").addEventListener("click", () => this.setView("wall"));
+    $("#mdViewList").addEventListener("click", () => this.setView("list"));
+    Data.on("media", () => this.render());
+  },
+  setView(v){
+    this.view = v;
+    $("#mdViewWall").classList.toggle("on", v === "wall");
+    $("#mdViewList").classList.toggle("on", v === "list");
+    this.render();
+  },
+  async save(){
+    const title = $("#mdTitle").value.trim();
+    if (!title){ toast("标题呢"); return; }
+    const props = {
+      title,
+      type: $("#mdType").value,
+      status: $("#mdStatus").value,
+      rating: $("#mdRating").value,
+      comment: $("#mdComment").value.trim(),
+      recordDate: todayStr()
+    };
+    try {
+      await Data.add("media", props);
+      $("#mdTitle").value = ""; $("#mdComment").value = "";
+      toast("已入收藏夹");
+    } catch(e){ toast("保存失败：" + (e.message||e)); }
+  },
+  render(){
+    const c = Data.cache.media;
+    if (c && c.error){ $("#mediaBox").innerHTML = errCard(c.error, "media"); return; }
+    const rows = (c && c.rows || []);
+    /* chips */
+    const defs = [["","全部"],["书","书"],["影","影"],["音","音"],["想看","想看"],["在看","在看"],["看完","看完"]];
+    $("#mdChips").innerHTML = defs.map(d => '<button class="chip' + (this.filter === d[0] ? " on" : "") + '" data-mf="' + d[0] + '">' + d[1] + '</button>').join("");
+    $$("#mdChips .chip").forEach(ch => ch.addEventListener("click", () => { this.filter = ch.dataset.mf; this.render(); }));
+
+    /* 年度统计 */
+    const year = todayStr().slice(0,4);
+    const yr = rows.filter(r => (r.recordDate||"").startsWith(year));
+    const rated = yr.filter(r => num(r.rating) > 0);
+    $("#mdYearStat").innerHTML =
+      '<span>' + year + ' 年<b>' + yr.length + '</b>件</span>' +
+      '<span>书<b>' + yr.filter(r=>r.type==="书").length + '</b></span>' +
+      '<span>影<b>' + yr.filter(r=>r.type==="影").length + '</b></span>' +
+      '<span>音<b>' + yr.filter(r=>r.type==="音").length + '</b></span>' +
+      '<span>平均分<b>' + (rated.length ? (rated.reduce((s,r)=>s+num(r.rating),0)/rated.length).toFixed(1) : "—") + '</b></span>' +
+      '<span>全部收藏<b>' + rows.length + '</b>件</span>';
+
+    const shown = this.filter
+      ? rows.filter(r => r.type === this.filter || r.status === this.filter)
+      : rows;
+    if (!shown.length){
+      $("#mediaBox").innerHTML = '<div class="empty"><div class="zh">虚 位 以 待</div>收藏夹还空着，值得填满</div>';
+      return;
+    }
+    const stars = r => { const n = num(r.rating)||0; return "★★★★★".slice(0,n) + "☆☆☆☆☆".slice(0,5-n); };
+    const sorted = shown.slice().sort((a,b) => (b.recordDate||"").localeCompare(a.recordDate||""));
+    if (this.view === "wall"){
+      $("#mediaBox").innerHTML = '<div class="wall">' + sorted.map((r, i) => {
+        const cs = MD_COLORS[r.type] || ["#8a857c","#6a655c"];
+        const ang = (i * 37) % 60 - 30;
+        return '<div class="cover" style="background:linear-gradient(' + (135 + ang) + 'deg,' + cs[0] + ',' + cs[1] + ')">' +
+          '<span class="stars">' + stars(r) + '</span><span class="badge">' + esc(r.status) + '</span>' +
+          '<span class="ct">' + esc(r.title) + '</span><span class="cs">' + esc(r.type) + ' · ' + esc((r.recordDate||"").slice(0,7)) + '</span></div>';
+      }).join("") + '</div>';
+    } else {
+      const TAG_BG = { "书":"#ece8df", "影":"#e3ecf0", "音":"#f4e6ea" };
+      const TAG_C  = { "书":"#7d6b52", "影":"#5b7d8f", "音":"#a5636f" };
+      $("#mediaBox").innerHTML = sorted.map(r =>
+        '<div class="media-list-row"><span class="tag" style="background:' + TAG_BG[r.type] + ';color:' + TAG_C[r.type] + '">' + esc(r.type) + ' · ' + esc(r.status) + '</span>' +
+        '<div class="bd"><b>' + esc(r.title) + '</b><span class="stars">' + (num(r.rating) > 0 ? stars(r) : "") + '</span><span style="font-size:11.5px;color:var(--soft)">' + esc((r.recordDate||"").slice(0,10)) + '</span>' +
+        (r.comment ? '<div class="cm">' + esc(r.comment) + '</div>' : '') + '</div>' +
+        '<span class="ops" style="display:flex"><button class="icon-btn" data-md-del="' + r._id + '">✕</button></span></div>').join("");
+      $$("#mediaBox [data-md-del]").forEach(b => b.addEventListener("click", async () => {
+        if (!confirm("从收藏夹移除？")) return;
+        try { await Data.remove("media", b.dataset.mdDel); toast("已移除"); }
+        catch(e){ toast("删除失败：" + (e.message||e)); }
+      }));
+    }
+  }
+};
+
+/* ============================================================
+   模块七：蝴蝶兰 · 狐狸之火
+   ============================================================ */
+const OC_TIPS = { /* 按月的养护要点 */
+  "1":"冬季保温最要紧：远离窗缝冷风，15℃以下搬离窗台，浇水间隔拉长到 12–15 天。",
+  "2":"冬末谨慎浇水，水苔微润即可。晴天的上午浇水，水温接近室温。",
+  "3":"气温回升，新根新叶可能萌动，可以逐渐恢复正常浇水节奏（约 8–10 天）。",
+  "4":"春季生长季开始，可施稀释均衡肥（浓度减半），两周一次。",
+  "5":"换盆的好时机：水苔老化、根满盆的话趁现在换，动作轻，别伤水晶头。",
+  "6":"初夏注意通风与遮阴，正午强光必遮，闷热易烂根。",
+  "7":"盛夏放在明亮但无直射处，空调房注意别对风口吹，盆别积水。",
+  "8":"立秋前后可能抽花箭， phosphate 钾薄肥跟上，温差大反而利于开花。",
+  "9":"秋季恢复生长，8–10 天浇一次，花箭期保持位置稳定，别频繁搬动。",
+  "10":"花期尽量少动盆、少换位；花开期不施肥，基质保持微润偏干。",
+  "11":"花期尾声：花从基部剪掉可促二次开花，也可只剪花箭上半段。",
+  "12":"降温后生长放缓，减水停肥，让它安静过冬。"
+};
+const Orchid = {
+  WATER_CYCLE: 8,   /* 天 */
+  FERT_CYCLE: 21,   /* 天 */
+  init(){
+    $("#ocWater").addEventListener("click", () => this.log("浇水", ""));
+    $("#ocFert").addEventListener("click", () => this.log("施肥", ""));
+    $("#ocOther").addEventListener("click", () => {
+      const note = prompt("记录一下（如：换盆 / 擦叶子 / 花谢修剪…）：", "");
+      if (note == null) return;
+      this.log(note.indexOf("换盆") >= 0 ? "换盆" : "其他", note);
+    });
+    Data.on("orchid", () => this.render());
+    const m = todayStr().slice(5,7).replace(/^0/,"");
+    $("#ocDailyTip").textContent = "【" + [ "一","二","三","四","五","六","七","八","九","十","十一","十二" ][Number(m)-1] + "月养护要点】" + OC_TIPS[m];
+  },
+  async log(action, note){
+    try {
+      await Data.add("orchid", { date: todayStr(), action, note: note || "" });
+      toast(action === "浇水" ? "💧 已记录浇水" : (action === "施肥" ? "🌱 已记录施肥" : "已记录"));
+    } catch(e){ toast("保存失败：" + (e.message||e)); }
+  },
+  last(action){
+    const rows = (Data.cache.orchid && Data.cache.orchid.rows || []).filter(r => r.action === action);
+    return rows.length ? rows.map(r => r.date).sort().reverse()[0] : null;
+  },
+  ring(el, pct, color, label, sub){
+    const R = 36, C = 2 * Math.PI * R;
+    el.innerHTML = '<svg width="88" height="88" viewBox="0 0 88 88">' +
+      '<circle cx="44" cy="44" r="' + R + '" fill="none" stroke="#ede9df" stroke-width="7"/>' +
+      '<circle cx="44" cy="44" r="' + R + '" fill="none" stroke="' + color + '" stroke-width="7" stroke-linecap="round" ' +
+      'stroke-dasharray="' + (C * Math.min(1, Math.max(0, pct))) + ' ' + C + '"/></svg>' +
+      '<div class="rt"><b>' + label + '</b><span>' + sub + '</span></div>';
+  },
+  render(){
+    const c = Data.cache.orchid;
+    const today = todayStr();
+    if (c && c.error){
+      $("#ocLogBox").innerHTML = errCard(c.error, "orchid");
+      $("#ocWaterText").textContent = "读取失败，可点击重试";
+      $("#ocFertText").textContent = "读取失败，可点击重试";
+      return;
+    }
+    /* 浇水 */
+    const lw = this.last("浇水");
+    if (lw){
+      const d = dayDiff(today, lw);
+      const due = this.WATER_CYCLE - d;
+      this.ring($("#ocWaterRing"), d / this.WATER_CYCLE, due <= 0 ? "#b04a3e" : (due <= 2 ? "#a8843c" : "#5b7d8f"),
+        d + " 天", "距上次");
+      $("#ocWaterText").innerHTML = due > 2
+        ? "上次浇水 <b>" + lw + "</b>（" + d + " 天前）。水苔还没干透的话再等等，建议 <b>" + due + "</b> 天后检查。"
+        : (due > 0
+          ? "该准备浇水了：建议 <b>" + due + "</b> 天内浇水，先掂掂盆、摸摸水苔。"
+          : "⚠️ 已 <b>" + d + "</b> 天没浇水，超过建议周期（" + this.WATER_CYCLE + " 天）。<b>今天检查水苔，干透就浇透。</b>");
+    } else {
+      this.ring($("#ocWaterRing"), 0, "#5b7d8f", "—", "尚无记录");
+      $("#ocWaterText").innerHTML = "还没有浇水记录。刚到家的蝴蝶兰先别急着浇，<b>3–5 天后水苔发白再浇透</b>。点下面的「💧 浇水」开始记录。";
+    }
+    /* 施肥 */
+    const lf = this.last("施肥");
+    if (lf){
+      const d = dayDiff(today, lf);
+      const due = this.FERT_CYCLE - d;
+      this.ring($("#ocFertRing"), d / this.FERT_CYCLE, due <= 0 ? "#a8843c" : "#5f7355",
+        d + " 天", "距上次");
+      $("#ocFertText").innerHTML = due > 0
+        ? "上次施肥 " + lf + "（" + d + " 天前），约 <b>" + due + "</b> 天后可再来一次磷钾薄肥（浓度减半）。"
+        : "距上次施肥已 " + d + " 天，可以施一次磷钾薄肥（浓度减半），花期两周一次即可。";
+    } else {
+      this.ring($("#ocFertRing"), 0, "#5f7355", "—", "尚无记录");
+      $("#ocFertText").innerHTML = "还没有施肥记录。新买的花通常带肥，<b>先养一个月</b>，之后再薄肥。";
+    }
+    /* 日志 */
+    const rows = (c && c.rows || []).filter(r => r.date >= addDays(today, -30))
+      .sort((a,b) => (b.date+(b._id||"")).localeCompare(a.date+(a._id||"")));
+    $("#ocLogBox").innerHTML = rows.length
+      ? rows.slice(0, 20).map(r =>
+        '<div class="log-line"><span class="ld">' + esc(r.date) + '</span><span class="la"><span class="act-tag act-' + esc(r.action) + '">' + esc(r.action) + '</span></span><span class="ln">' + esc(r.note||"") + '</span>' +
+        '<button class="icon-btn" data-oc-del="' + r._id + '">✕</button></div>').join("")
+      : '<div class="empty"><div class="zh">静 待 花 开</div>还没有养护记录</div>';
+    $$("#ocLogBox [data-oc-del]").forEach(b => b.addEventListener("click", async () => {
+      if (!confirm("删除这条养护记录？")) return;
+      try { await Data.remove("orchid", b.dataset.ocDel); toast("已删除"); }
+      catch(e){ toast("删除失败：" + (e.message||e)); }
+    }));
+  }
+};
+
+/* ============================================================
+   模块零：今日概览
+   ============================================================ */
+const Overview = {
+  init(){
+    $$("#ovStats .stat-cell").forEach(c => c.addEventListener("click", () => gotoPage(c.dataset.go)));
+    Object.keys(TABLES).forEach(k => Data.on(k, () => this.render()));
+  },
+  render(){
+    const today = todayStr();
+    const d = new Date();
+    $("#todayDate").textContent = (d.getMonth()+1) + " 月 " + d.getDate() + " 日";
+    $("#todayWeek").textContent = "周" + "日一二三四五六"[d.getDay()] + " · " + ["星期天好好休息","星期一从容开始","星期二稳住节奏","星期三过半啦","星期四再撑一下","星期五胜利在望","星期六享受生活"][d.getDay()];
+    const q = QUOTES[Math.floor((Date.now() / 86400000)) % QUOTES.length];
+    $("#ovQuote").textContent = "「 " + q[0] + " 」";
+    $("#ovQuoteSrc").textContent = "—— " + q[1];
+
+    const anyLoading = Object.keys(TABLES).some(k => Data.cache[k] && Data.cache[k].loading);
+    const anyError = Object.keys(TABLES).some(k => Data.cache[k] && Data.cache[k].error);
+    $("#todayHint").textContent = anyLoading ? "数据同步中…" : (anyError ? "部分数据读取失败，进入对应板块可重试。" : "一切就绪。今天也值得认真生活。");
+
+    /* 支出 & 预算 */
+    const exRows = (Data.cache.expense && Data.cache.expense.rows || []).filter(r => (r.date||"").startsWith(monthStr()) && r.type !== "收入");
+    const outSum = exRows.reduce((s,r) => s + (num(r.amount)||0), 0);
+    const bud = (Data.cache.budget && Data.cache.budget.rows || []).find(r => r.month === monthStr());
+    const bv = bud ? num(bud.amount) : null;
+    const el = id => { const e = $(id); e.classList.remove("skel"); return e; };
+    el("#ovSpend").textContent = "¥" + fmt(outSum);
+    el("#ovBudgetNote").textContent = bv ? ("预算 ¥" + fmt(bv) + " · 剩 ¥" + fmt(Math.max(0, bv - outSum)) + (outSum > bv ? " · 已超支！" : "")) : "点击设置月度预算";
+
+    /* 习惯 */
+    const habits = (Data.cache.habit && Data.cache.habit.rows || []);
+    const logs = (Data.cache.habitLog && Data.cache.habitLog.rows || []).filter(r => r.date === today);
+    const doneN = habits.filter(h => logs.some(l => l.habitId === h._id && (num(l.value)||0) > 0)).length;
+    el("#ovHabit").textContent = doneN + " / " + habits.length;
+    el("#ovHabitNote").textContent = habits.length ? (doneN === habits.length && habits.length > 0 ? "全部完成，漂亮 🎉" : "还差 " + (habits.length - doneN) + " 个") : "添加第一个小习惯";
+
+    /* 日程 */
+    const sched = (Data.cache.schedule && Data.cache.schedule.rows || []).filter(r => r.date >= today && r.done !== "是").sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+    const next = sched[0];
+    el("#ovSched").textContent = next ? (next.date === today ? "今天" : next.date.slice(5).replace("-","/")) : "空闲";
+    el("#ovSched").style.fontSize = next && next.title.length > 6 ? "17px" : "";
+    el("#ovSchedNote").textContent = next ? next.title.slice(0, 16) + (next.time ? " · " + next.time : "") : (sched.length ? "" : "未来日程为空");
+    /* 待买 */
+    const buys = (Data.cache.shopping && Data.cache.shopping.rows || []).filter(r => r.bought !== "是");
+    el("#ovBuy").textContent = buys.length + " 项";
+    el("#ovBuyNote").textContent = buys.length ? "合计约 ¥" + fmt(buys.reduce((s,r)=>s+(num(r.price)||0),0)) : "钱包很安全";
+
+    /* 蝴蝶兰 */
+    const ocRows = Data.cache.orchid && Data.cache.orchid.rows || [];
+    const lw = ocRows.filter(r => r.action === "浇水").map(r => r.date).sort().reverse()[0];
+    if (lw){
+      const dd = dayDiff(today, lw);
+      el("#ovOrchid").textContent = dd + " 天前";
+      el("#ovOrchidNote").textContent = dd >= Orchid.WATER_CYCLE ? "超过浇水周期，今天检查水苔！" : (Orchid.WATER_CYCLE - dd) + " 天后建议浇水";
+    } else {
+      el("#ovOrchid").textContent = "新到家";
+      el("#ovOrchidNote").textContent = "先缓苗，3–5 天后浇透水";
+    }
+    /* 书影音 */
+    const mdRows = (Data.cache.media && Data.cache.media.rows || []).filter(r => (r.recordDate||"").startsWith(today.slice(0,4)));
+    el("#ovMedia").textContent = mdRows.length + " 件";
+    el("#ovMediaNote").textContent = mdRows.length ? ("今年平均分 " + (mdRows.filter(r=>num(r.rating)>0).length ? (mdRows.filter(r=>num(r.rating)>0).reduce((s,r)=>s+num(r.rating),0)/mdRows.filter(r=>num(r.rating)>0).length).toFixed(1) : "—")) : "开始收藏第一件";
+  }
+};
+
+/* ============================================================
+   数据源设置 & 备份 & 启动
+   ============================================================ */
+const BindUI = {
+  init(){
+    $("#bindBtn").addEventListener("click", () => this.open());
+    $("#modePill").addEventListener("click", () => this.quick());
+    $("#bindClose").addEventListener("click", () => $("#bindMask").classList.remove("on"));
+    $("#bindSave").addEventListener("click", () => this.save());
+    $("#bindExport").addEventListener("click", () => this.exportCfg());
+    $("#bindImport").addEventListener("click", () => this.importCfg());
+    $("#bindTest").addEventListener("click", () => this.test());
+    $("#sbLogin").addEventListener("click", () => this.sbLogin());
+    $("#sbSignup").addEventListener("click", () => this.sbSignup());
+    $("#sbCheck").addEventListener("click", () => this.sbCheck());
+    $("#sbOut").addEventListener("click", () => this.sbOut());
+    $("#bindMask").addEventListener("click", e => { if (e.target === $("#bindMask")) $("#bindMask").classList.remove("on"); });
+  },
+
+  /* 点状态条：已连云端 → 手动同步；否则 → 打开设置 */
+  quick(){
+    if (Data.bk() === "supabase"){
+      toast("正在同步…");
+      Data.softRefresh("manual").then(() => {
+        renderMode();
+        toast(Data.lastFail ? "同步失败，请检查网络" : "已是最新");
+      });
+    } else {
+      this.open();
+    }
+  },
+
+  sbDiag(msg){ const el = $("#sbDiag"); if (el) el.textContent = msg == null ? "" : msg; },
+  readCfg(){
+    return {
+      url: $("#sbUrl").value.trim().replace(/\/+$/, ""),
+      anonKey: $("#sbKey").value.trim(),
+      email: $("#sbEmail").value.trim()
+    };
+  },
+  renderSbState(){
+    const el = $("#sbState");
+    if (!el) return;
+    if (Data.bk() === "supabase"){
+      el.className = "conn-state ok";
+      el.innerHTML = "✓ 云同步已连接 · " + esc((SB.session && SB.session.email) || "") +
+        (Data.lastSync ? "（最近同步 " + hhmm() + "）" : "");
+    } else if (SB.configured() && SB.session){
+      el.className = "conn-state err";
+      el.innerHTML = "⚠ 登录已过期，请重新输入密码登录";
+    } else if (SB.configured()){
+      el.className = "conn-state";
+      el.innerHTML = "已保存配置，尚未登录";
+    } else {
+      el.className = "conn-state";
+      el.innerHTML = "尚未配置 —— 填好下面四项后点「登录」；还没有账号就先点「注册新账号」";
+    }
+  },
+
+  /* 登录成功后：切到云端后端并整体重载 */
+  async activate(){
+    Data.mode = "supabase";
+    Data.cache = {};
+    Data.lastFail = null;
+    renderMode();
+    await Data.loadAll();
+    Data.startPolling();
+    Data.lastSync = new Date();
+    renderMode();
+    this.renderSbState();
+  },
+
+  async sbLogin(){
+    const cfg = this.readCfg();
+    if (!cfg.url || !cfg.anonKey) return this.sbDiag("请先填写项目地址和 anon key。");
+    const pass = $("#sbPass").value;
+    if (!cfg.email || !pass) return this.sbDiag("请填写邮箱和密码。");
+    this.sbDiag("正在登录…");
+    try {
+      SB.saveCfg(cfg);
+      await SB.signIn(cfg.email, pass);
+      SB.saveCfg(Object.assign({}, SB.cfg, { email: cfg.email }));
+      $("#sbPass").value = "";
+      await this.activate();
+      this.sbDiag("✓ 登录成功：" + cfg.email + "\n已加载 " + Object.keys(TABLES).length + " 张表，云同步已开启。");
+      toast("云同步已开启");
+    } catch(e){
+      this.sbDiag("✗ 登录失败：" + (e.message || e) +
+        "\n\n常见原因：\n· 邮箱或密码不对\n· 项目里还没有这个用户\n   Authentication → Users → Add user（勾选 Auto Confirm）\n· 项目开启了邮箱确认，需先去邮箱点确认链接\n· 项目地址或 anon key 填错");
+    }
+  },
+
+  async sbSignup(){
+    const cfg = this.readCfg();
+    if (!cfg.url || !cfg.anonKey) return this.sbDiag("请先填写项目地址和 anon key。");
+    const pass = $("#sbPass").value;
+    if (!cfg.email || !pass) return this.sbDiag("请填写邮箱和密码。");
+    if (pass.length < 6) return this.sbDiag("密码太短，Supabase 要求至少 6 位。");
+    this.sbDiag("正在注册…");
+    try {
+      SB.saveCfg(cfg);
+      const r = await SB.signUp(cfg.email, pass);
+      if (r.confirmed){
+        $("#sbPass").value = "";
+        await this.activate();
+        this.sbDiag("✓ 注册成功并已登录：" + cfg.email);
+        toast("云同步已开启");
+      } else {
+        this.sbDiag("已提交注册，但项目开启了「邮箱确认」。\n请到 " + cfg.email + " 收信并点确认链接，再回到这里点「登录」。\n\n想跳过确认：Supabase → Authentication → Sign In / Providers → Email → 关掉 Confirm email。");
+      }
+    } catch(e){
+      this.sbDiag("✗ 注册失败：" + (e.message || e));
+    }
+  },
+
+  async sbOut(){
+    SB.signOut();
+    Data.stopPolling();
+    Data.mode = "local";
+    Data.cache = {};
+    Data.lastFail = null;
+    renderMode();
+    await Data.loadAll();
+    this.renderSbState();
+    this.sbDiag("已退出登录，当前显示本机数据。云端数据仍在 Supabase 里，重新登录即可看到。");
+    toast("已退出登录");
+  },
+
+  /* 连接自检：不需要登录，逐张表探一次，把原始结果打出来 */
+  async sbCheck(){
+    const cfg = this.readCfg();
+    if (!cfg.url || !cfg.anonKey) return this.sbDiag("请先填写项目地址和 anon key。");
+    const lines = ["地址：" + cfg.url, ""];
+    const H = { "apikey": cfg.anonKey, "Authorization": "Bearer " + (SB.session ? SB.session.access_token : cfg.anonKey) };
+
+    try {
+      const r = await fetch(cfg.url + "/auth/v1/health", { headers: { "apikey": cfg.anonKey } });
+      lines.push("· Auth 服务：" + (r.ok ? "✓ 可访问" : "✗ HTTP " + r.status));
+    } catch(e){ lines.push("· Auth 服务：✗ 连不上（检查项目地址 / 网络）"); }
+
+    lines.push("· 数据表检查：");
+    let okN = 0, missN = 0;
+    for (const k of Object.keys(TABLES)){
+      const t = TABLES[k].sb;
+      try {
+        const r = await fetch(cfg.url + "/rest/v1/" + t + "?select=id&limit=1", { headers: H });
+        if (r.ok){ okN++; lines.push("   ✓ " + TABLES[k].name + "（" + t + "）"); }
+        else {
+          missN++;
+          let d = ""; try { d = JSON.stringify(await r.json()); } catch(e){}
+          lines.push("   ✗ " + TABLES[k].name + "（" + t + "）：" + (r.status === 404 ? "表不存在 → 请先执行 supabase/schema.sql" : (d || ("HTTP " + r.status))));
+        }
+      } catch(e){ missN++; lines.push("   ✗ " + TABLES[k].name + "：网络错误"); }
+    }
+    lines.push("");
+    lines.push(missN ? ("有 " + missN + " 张表不可用，其余正常。表不存在就把 supabase/schema.sql 粘到 SQL Editor 执行一次。")
+                     : ("全部 " + okN + " 张表就绪 ✓"));
+    lines.push(SB.session ? ("登录状态：已登录（" + (SB.session.email || "") + "）") : "登录状态：未登录（只能验证表是否存在，读写需先登录）");
+    this.sbDiag(lines.join("\n"));
+  },
+
+  /* 资料库模式：现场诊断 */
+  async test(){
+    const out = $("#bindTestOut");
+    if (Data.mode !== "library" || !SDK.db){
+      out.textContent = "当前不是资料库在线环境：本页尚未在资料库中打开，或 SDK 未就绪。";
+      return;
+    }
+    const cur = {};
+    $$("#bindRows [data-bk]").forEach(i => cur[i.dataset.bk] = i.value.trim());
+    const lines = ["环境：资料库在线（SDK 已注入）"];
+    for (const k of Object.keys(TABLES)){
+      const id = cur[k];
+      if (!id){ lines.push("· " + TABLES[k].name + "：未填 ID，跳过"); continue; }
+      try {
+        const schema = await SDK.db.getSchema({ databaseId: id });
+        const cols = schema && (schema.properties || schema.fields || schema.columns);
+        const colTxt = Array.isArray(cols) ? cols.length + " 列：" + cols.map(c => c.name || c.key || c).join(",") : Object.keys(schema || {}).join(",");
+        const resp = await SDK.db.query({ databaseId: id, pageSize: 3 });
+        lines.push("✓ " + TABLES[k].name + "：" + colTxt + "｜试读 " + normList(resp).length + " 行");
+      } catch(e){
+        lines.push("✗ " + TABLES[k].name + "：" + (e && e.message ? e.message : e));
+      }
+    }
+    out.textContent = lines.join("\n");
+  },
+
+  open(){
+    renderMode();
+    const cfg = SB.cfg || {};
+    $("#sbUrl").value = cfg.url || "";
+    $("#sbKey").value = cfg.anonKey || "";
+    $("#sbEmail").value = (SB.session && SB.session.email) || cfg.email || "";
+    $("#sbPass").value = "";
+    this.sbDiag(null);
+    this.renderSbState();
+    $("#sbSteps").innerHTML =
+      '<b style="color:var(--ink)">三步接入</b><br>' +
+      '① Supabase → <code class="k">SQL Editor</code> → 粘贴 <code class="k">supabase/schema.sql</code> 执行（建 11 张表 + 安全策略）<br>' +
+      '② <code class="k">Authentication → Users → Add user</code> 建一个邮箱账号，勾选 Auto Confirm<br>' +
+      '③ Supabase → <code class="k">Settings → API</code> 复制 Project URL 和 anon public key 填到上面，再用刚建的账号登录';
+
+    $("#bindRows").innerHTML = Object.keys(TABLES).map(k =>
+      '<div class="bind-row"><span class="bn">' + TABLES[k].name + '<small>' + TABLES[k].csv + '</small></span>' +
+      '<input data-bk="' + k + '" value="' + esc(Bind.id(k)) + '" placeholder="表格 ID" spellcheck="false">' +
+      '<span class="st" style="color:' + (Bind.id(k) ? "var(--ok)" : "var(--soft)") + '">' + (Bind.id(k) ? "已绑" : "未绑") + '</span></div>').join("");
+    $("#bindSteps").innerHTML =
+      '资料库模式用到同目录的 <code class="k">资料库表格模板/</code> 十一张 CSV：导入资料库后，把每张表的 ID 填到上面。换设备时用「复制配置」，在新设备「粘贴配置」即可。';
+
+    $("#bindMask").classList.add("on");
+  },
+
+  async save(){
+    const m = {};
+    $$("#bindRows [data-bk]").forEach(i => m[i.dataset.bk] = i.value.trim());
+    Bind.save(m);
+    toast("绑定已保存，正在重新加载…");
+    renderMode();
+    await Data.loadAll();
+    Data.emitAll();
+  },
+
+  exportCfg(){
+    const s = JSON.stringify({ supabase: SB.cfg || null, library: Bind.map }, null, 2);
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(s).then(() => toast("配置已复制（不含密码）"), () => prompt("复制下面的配置：", s));
+    else prompt("复制下面的配置：", s);
+  },
+  importCfg(){
+    const s = prompt("粘贴之前复制的配置 JSON：", "");
+    if (!s) return;
+    try {
+      const o = JSON.parse(s);
+      if (o.supabase) SB.saveCfg(o.supabase);
+      if (o.library) Bind.save(o.library);
+      toast("配置已导入，重新加载…");
+      renderMode();
+      Data.loadAll();
+    } catch(e){ toast("配置格式不对"); }
+  }
+};
+const Backup = {
+  init(){
+    $("#backupBtn").addEventListener("click", () => $("#backupMask").classList.add("on"));
+    $("#bkClose").addEventListener("click", () => $("#backupMask").classList.remove("on"));
+    $("#backupMask").addEventListener("click", e => { if (e.target === $("#backupMask")) $("#backupMask").classList.remove("on"); });
+    $("#bkExport").addEventListener("click", () => {
+      const blob = new Blob([JSON.stringify(Data.exportLocal(), null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "生活工作台备份-" + todayStr() + ".json";
+      a.click();
+    });
+    $("#bkImport").addEventListener("click", () => $("#bkFile").click());
+    $("#bkFile").addEventListener("change", async e => {
+      const f = e.target.files[0]; if (!f) return;
+      try {
+        await Data.importLocal(JSON.parse(await f.text()));
+        toast("备份已导入");
+        $("#backupMask").classList.remove("on");
+        Data.loadAll();
+      } catch(err){ toast("导入失败：" + (err.message||err)); }
+      e.target.value = "";
+    });
+  }
+};
+
+/* ---------- 双向同步①：资料库推送 → 重载对应表 ---------- */
+let syncTimer = null;
+function setupSync(){
+  if (!SDK.db || typeof SDK.db.onUpdated !== "function") return;
+  SDK.db.onUpdated(ev => {
+    const ids = (ev && ev.databaseIds) || [];
+    const keys = Object.keys(TABLES).filter(k => ids.indexOf(Bind.id(k)) >= 0);
+    if (!keys.length) return;
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(() => {
+      keys.forEach(k => Data.load(k, { force: true, silent: true }));
+      Data.lastSync = new Date();
+      toast("数据已更新（资料库）");
+      renderMode();
+    }, 500);
+  });
+}
+
+/* ---------- 双向同步②：Supabase 轮询 + 回到前台立即刷新 ---------- */
+function setupCloudSync(){
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) Data.softRefresh("focus"); });
+  window.addEventListener("focus", () => Data.softRefresh("focus"));
+  window.addEventListener("pageshow", () => Data.softRefresh("focus"));
+}
+
+/* ---------- 启动 ---------- */
+(async function boot(){
+  /* 先把界面骨架立起来 —— 不等数据，任何环境都不白屏 */
+  buildNav(); gotoPage("overview");
+  Overview.init(); Money.init(); Habit.init(); Fit.init();
+  Sched.init(); Buy.init(); Media.init(); Orchid.init();
+  BindUI.init(); Backup.init();
+  Overview.render();
+  const mt = $("#modeText"); if (mt) mt.textContent = "检测数据环境…";
+
+  Bind.load();
+  SB.loadCfg();
+  SB.loadSession();
+
+  /* 选后端：资料库 > Supabase > 本地 */
+  let mode = "local";
+  if (await SDK.detect(1200)){
+    mode = "library";
+  } else if (SB.configured() && SB.session){
+    mode = "supabase";
+    if (!(await SB.ensureFresh())){
+      toast("登录已过期，请到「数据源设置」重新登录");
+    }
+  }
+  Data.mode = mode;
+  renderMode();
+
+  setupSync();
+  setupCloudSync();
+  if (Data.bk() === "supabase") Data.startPolling();
+
+  /* 再拉数据；单表失败不阻断其余模块 */
+  try { await Data.loadAll(); } catch(e){ console.error(e); }
+  renderMode();
+})();
+</script>
+</body>
+</html>
