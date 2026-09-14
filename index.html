@@ -283,6 +283,13 @@ h1.pt{font-family:var(--serif);font-size:28px;font-weight:600;letter-spacing:1px
 .act-tag{display:inline-block;font-size:10.5px;padding:1px 9px;border-radius:99px;letter-spacing:1px}
 .act-浇水{background:#e3ecf0;color:var(--sky)} .act-施肥{background:#ece8df;color:var(--gold)}
 .act-换盆{background:#f0e6df;color:var(--clay)} .act-其他{background:#eceae4;color:var(--soft)}
+.act-拍照{background:#e6efe8;color:#5f7355}
+.log-thumb{width:48px;height:48px;border-radius:9px;object-fit:cover;cursor:zoom-in;flex:0 0 auto;border:1px solid var(--line);align-self:center}
+.lb-mask{position:fixed;inset:0;background:rgba(22,20,16,.9);z-index:130;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:24px;cursor:zoom-out;-webkit-tap-highlight-color:transparent}
+.lb-mask.on{display:flex}
+.lb-mask img{max-width:100%;max-height:82vh;border-radius:10px;box-shadow:0 12px 44px rgba(0,0,0,.55)}
+.lb-cap{color:#efe9dc;font-size:12.5px;letter-spacing:1px;text-align:center;line-height:1.7}
+.lb-cap b{font-weight:600}
 
 /* ---------- 状态 / 错误 ---------- */
 .err-card{
@@ -643,6 +650,8 @@ code.k{background:#efece3;border-radius:5px;padding:1px 7px;font-size:12px;font-
           <button class="btn" id="ocWater">💧 浇水</button>
           <button class="btn alt" id="ocFert">🌱 施肥</button>
           <button class="btn ghost" id="ocOther">✎ 其他 / 记一笔</button>
+          <button class="btn ghost" id="ocPhoto">📷 拍照 / 传图</button>
+          <input type="file" id="ocPhotoFile" accept="image/*" style="display:none">
         </div>
         <p style="font-size:11.5px;color:var(--soft);margin-top:10px">浇水口诀：水苔摸起来干脆了再浇，浇就浇透，托盘别积水，叶心别留水。</p>
       </div>
@@ -734,6 +743,7 @@ code.k{background:#efece3;border-radius:5px;padding:1px 7px;font-size:12px;font-
 </div>
 
 <div class="toast" id="toast"></div>
+<div class="lb-mask" id="ocLb"></div>
 <script>
 "use strict";
 /* ============================================================
@@ -2008,6 +2018,30 @@ const OC_TIPS = { /* 按月的养护要点 */
   "11":"花期尾声：花从基部剪掉可促二次开花，也可只剪花箭上半段。",
   "12":"降温后生长放缓，减水停肥，让它安静过冬。"
 };
+/* 图片压缩：最长边压到 800px、JPEG 82%，返回 base64（供拍照记录使用） */
+function OCCompress(file){
+  return new Promise((ok, no) => {
+    const fr = new FileReader();
+    fr.onerror = () => no(new Error("read"));
+    fr.onload = () => {
+      const img = new Image();
+      img.onerror = () => no(new Error("decode"));
+      img.onload = () => {
+        const MAX = 800;
+        let w = img.width, h = img.height;
+        if (w > MAX){ h = Math.round(h * MAX / w); w = MAX; }
+        if (h > 1280){ w = Math.round(w * 1280 / h); h = 1280; }
+        const cv = document.createElement("canvas");
+        cv.width = w; cv.height = h;
+        cv.getContext("2d").drawImage(img, 0, 0, w, h);
+        try { ok(cv.toDataURL("image/jpeg", 0.82)); }
+        catch(e){ no(e); }
+      };
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
 const Orchid = {
   WATER_CYCLE: 8,   /* 天 */
   FERT_CYCLE: 21,   /* 天 */
@@ -2019,6 +2053,29 @@ const Orchid = {
       if (note == null) return;
       this.log(note.indexOf("换盆") >= 0 ? "换盆" : "其他", note);
     });
+    /* 拍照 / 传图 */
+    $("#ocPhoto").addEventListener("click", () => $("#ocPhotoFile").click());
+    $("#ocPhotoFile").addEventListener("change", async (e) => {
+      const f = e.target.files && e.target.files[0];
+      e.target.value = "";
+      if (!f) return;
+      if (!/^image\//.test(f.type)) { toast("请选择图片文件"); return; }
+      if (f.size > 20 * 1024 * 1024) { toast("图片太大（超过 20MB），换一张吧"); return; }
+      let photo;
+      try { photo = await OCCompress(f); }
+      catch(err){ toast("图片处理失败，换一张试试"); return; }
+      const note = prompt("给这张照片配句话（可留空，如：第二朵开了 / 换盆前存档）：", "");
+      if (note === null) return;
+      try {
+        await Data.add("orchid", { date: todayStr(), action: "拍照", note: note || "", photo });
+        toast("📷 已记录一张");
+      } catch(err){
+        const m = String((err && err.message) || err);
+        if (/photo|column|PGRST204/i.test(m)) toast("保存失败：云端表还没有 photo 列。请在 Supabase SQL Editor 执行 schema.sql 里新增的那行 alter 语句");
+        else toast("保存失败：" + m);
+      }
+    });
+    $("#ocLb").addEventListener("click", () => $("#ocLb").classList.remove("on"));
     Data.on("orchid", () => this.render());
     const m = todayStr().slice(5,7).replace(/^0/,"");
     $("#ocDailyTip").textContent = "【" + [ "一","二","三","四","五","六","七","八","九","十","十一","十二" ][Number(m)-1] + "月养护要点】" + OC_TIPS[m];
@@ -2085,13 +2142,23 @@ const Orchid = {
       .sort((a,b) => (b.date+(b._id||"")).localeCompare(a.date+(a._id||"")));
     $("#ocLogBox").innerHTML = rows.length
       ? rows.slice(0, 20).map(r =>
-        '<div class="log-line"><span class="ld">' + esc(r.date) + '</span><span class="la"><span class="act-tag act-' + esc(r.action) + '">' + esc(r.action) + '</span></span><span class="ln">' + esc(r.note||"") + '</span>' +
+        '<div class="log-line">' +
+        (r.photo ? '<img class="log-thumb" src="' + r.photo + '" alt="养护照片" data-oc-img="' + r._id + '">' : "") +
+        '<span class="ld">' + esc(r.date) + '</span><span class="la"><span class="act-tag act-' + esc(r.action) + '">' + esc(r.action) + '</span></span><span class="ln">' + esc(r.note||"") + '</span>' +
         '<button class="icon-btn" data-oc-del="' + r._id + '">✕</button></div>').join("")
       : '<div class="empty"><div class="zh">静 待 花 开</div>还没有养护记录</div>';
     $$("#ocLogBox [data-oc-del]").forEach(b => b.addEventListener("click", async () => {
       if (!confirm("删除这条养护记录？")) return;
       try { await Data.remove("orchid", b.dataset.ocDel); toast("已删除"); }
       catch(e){ toast("删除失败：" + (e.message||e)); }
+    }));
+    $$("#ocLogBox [data-oc-img]").forEach(t => t.addEventListener("click", () => {
+      const r = (Data.cache.orchid && Data.cache.orchid.rows || []).find(x => x._id === t.dataset.ocImg);
+      const lb = $("#ocLb");
+      lb.innerHTML = '<img src="' + t.src + '" alt="">' +
+        '<div class="lb-cap"><b>' + esc(r ? r.date : "") + " · " + esc(r ? r.action : "拍照") + '</b>' +
+        (r && r.note ? "<br>" + esc(r.note) : "") + '<br>点击任意处关闭</div>';
+      lb.classList.add("on");
     }));
   }
 };
