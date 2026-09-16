@@ -226,6 +226,69 @@ h1.pt{font-family:var(--serif);font-size:28px;font-weight:600;letter-spacing:1px
 .sched-item.past-due .tt b{color:var(--danger)}
 .pill-done{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--line2);color:transparent;font-size:12px;flex:none;display:flex;align-items:center;justify-content:center}
 .pill-done.on{background:var(--moss);border-color:var(--moss);color:#fff}
+.sched-item .tt .rg{color:var(--sky);margin-left:8px;font-size:11.5px}
+.sched-item .tt .live{display:inline-block;font-size:10.5px;padding:1px 7px;border-radius:999px;background:#eef1e8;color:var(--moss);border:1px solid #dde3d3;margin-left:8px;vertical-align:1px}
+.sched-item .tt .late{display:inline-block;font-size:10.5px;padding:1px 7px;border-radius:999px;background:#f8eae4;color:var(--clay);border:1px solid #efd7cc;margin-left:8px;vertical-align:1px}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:9px;overflow:hidden;flex:none}
+.seg button{padding:5px 14px;font-size:12px;color:var(--soft);background:transparent}
+.seg button + button{border-left:1px solid var(--line2)}
+.seg button.on{background:var(--ink);color:#f7f4ec}
+.sc-preview{font-size:12.5px;color:var(--soft);margin-top:11px;padding-top:11px;border-top:1px dashed var(--line);min-height:18px}
+.sc-preview b{color:var(--clay);font-family:var(--serif);font-size:13.5px;font-weight:600}
+
+/* ---------- 日程 · 月历 ---------- */
+.cal-grid{border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:14px;background:#fffefb}
+.cal-head{display:grid;grid-template-columns:repeat(7,1fr);background:#f8f6f1;border-bottom:1px solid var(--line)}
+.cal-head span{text-align:center;font-size:11px;color:var(--soft);letter-spacing:1px;padding:8px 0;border-left:1px solid var(--line)}
+.cal-head span:first-child{border-left:none}
+.cal-head span.wk{color:var(--clay)}
+.cal-week{display:grid;grid-template-columns:repeat(7,1fr);border-top:1px solid var(--line)}
+.cal-head + .cal-week{border-top:none}
+.cal-cell{border-left:1px solid var(--line);min-height:96px;padding:5px 6px 6px;display:flex;flex-direction:column;gap:3px;cursor:pointer;transition:background .15s}
+.cal-week .cal-cell:first-child{border-left:none}
+.cal-cell:hover{background:#fbf9f4}
+.cal-cell.out{background:#faf9f5}
+.cal-cell.out .cd{color:#c6c0b2}
+.cal-cell.sel{background:#fdf7f3;box-shadow:inset 0 0 0 2px var(--clay)}
+.cal-cell .cd{width:19px;height:19px;line-height:19px;text-align:center;border-radius:999px;font-size:11.5px;font-weight:600;color:#6a655c;flex:none}
+.cal-cell.weekend:not(.out) .cd{color:var(--clay)}
+.cal-cell.today .cd{background:var(--clay);color:#fff}
+.cal-chip{font-size:10.5px;line-height:15px;padding:1px 5px;border-radius:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid transparent;flex:none}
+.cal-chip.ghost{background:transparent;border-color:transparent}
+.cal-chip.c0{background:#eef1e8;border-color:#dde3d3;color:#48523f}
+.cal-chip.c1{background:#f7ece7;border-color:#efd9cf;color:#8a5334}
+.cal-chip.c2{background:#e9eff3;border-color:#d6e0e8;color:#3f5c6b}
+.cal-chip.c3{background:#f2edf5;border-color:#e4d9ec;color:#6b5478}
+/* 圆角与边框透明由 JS 按「真正的起止 / 周末换行」内联控制，这里只管伸缩 */
+.cal-chip.span-only{margin:0 1px}
+.cal-chip.span-start{margin:0 -6px 0 0;padding-left:7px}
+.cal-chip.span-mid{margin:0 -6px}
+.cal-chip.span-end{margin:0 0 0 -6px;padding-left:7px}
+.cal-chip.past{opacity:.5}
+.cal-chip.done{opacity:.55;text-decoration:line-through}
+.cal-more{font-size:10px;color:var(--soft);padding-left:4px;flex:none}
+.cal-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.cal-nav{margin-left:auto;display:flex;gap:6px;align-items:center}
+.cal-nav button{height:28px;padding:0 11px;border:1px solid var(--line2);border-radius:8px;color:var(--soft);font-size:12px}
+.cal-nav button:hover{color:var(--ink);border-color:var(--soft)}
+.cal-day-hd{font-size:12px;color:var(--soft);padding:14px 2px 6px;border-top:1px dashed var(--line);margin-top:16px}
+.cal-day-hd b{font-family:var(--serif);font-size:14px;color:var(--ink);font-weight:600;margin-right:6px}
+.cal-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--soft);margin-top:12px;align-items:center}
+.cal-legend i{display:inline-block;width:14px;height:9px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+
+/* ---------- 今天要处理 ---------- */
+.todo-row{display:flex;align-items:center;gap:11px;padding:9px 2px;border-bottom:1px dashed var(--line)}
+.todo-row:last-child{border-bottom:none}
+.todo-row .tg{font-size:10.5px;padding:2px 8px;border-radius:999px;flex:none;letter-spacing:.5px}
+.todo-row .tg.sched{background:#eef1e8;color:var(--moss);border:1px solid #dde3d3}
+.todo-row .tg.habit{background:#e9eff3;color:var(--sky);border:1px solid #d6e0e8}
+.todo-row .tg.late{background:#f8eae4;color:var(--clay);border:1px solid #efd7cc}
+.todo-row .tx{flex:1;min-width:0;font-size:13.5px}
+.todo-row .tx small{color:var(--soft);margin-left:8px;font-size:11.5px}
+.todo-row .go{font-size:12px;padding:5px 12px;border:1px solid var(--line2);border-radius:8px;color:var(--soft);flex:none;min-height:32px}
+.todo-row .go:hover{color:var(--ink);border-color:var(--soft)}
+.todo-row .go.primary{border-color:var(--moss);color:var(--moss)}
+.todo-row .go.primary:hover{background:var(--moss);color:#fff}
 
 /* ---------- 待买 ---------- */
 .buy-row{display:flex;align-items:center;gap:12px;padding:10px 2px;border-bottom:1px dashed var(--line)}
@@ -370,6 +433,22 @@ code.k{background:#efece3;border-radius:5px;padding:1px 7px;font-size:12px;font-
   .bottom-nav button.on{color:var(--clay);font-weight:600}
   .toast{bottom:90px}
   .field{flex:1 1 130px}
+  /* 月历：窄屏压缩但不丢信息，标题截断、点开看当天详情 */
+  .cal-grid{border-radius:8px}
+  .cal-head span{font-size:10px;padding:6px 0;letter-spacing:0}
+  .cal-cell{min-height:72px;padding:4px 3px 5px;gap:2px}
+  .cal-cell .cd{font-size:11px;width:17px;height:17px;line-height:17px}
+  .cal-chip{font-size:9px;line-height:13px;padding:1px 3px}
+  .cal-chip.span-start,.cal-chip.span-end{padding-left:5px}
+  .cal-chip.span-start{margin-right:-3px}
+  .cal-chip.span-mid{margin:0 -3px}
+  .cal-chip.span-end{margin-left:-3px}
+  .cal-chip.span-only{margin:0}
+  .cal-more{font-size:9px;padding-left:2px}
+  .cal-nav button{min-height:40px}
+  .seg button{padding:9px 15px;min-height:40px}
+  .todo-row .go{min-height:44px;padding:8px 14px}
+  .todo-row{padding:11px 2px}
 }
 @media (max-width:420px){
   .g2,.g3,.g4,.care-grid{grid-template-columns:1fr}
@@ -401,6 +480,11 @@ code.k{background:#efece3;border-radius:5px;padding:1px 7px;font-size:12px;font-
         <span class="weekday" id="todayWeek"></span>
       </div>
       <div class="page-desc" id="todayHint">先看到这里，数据正在路上。</div>
+
+      <div class="card" id="ovTodoCard" style="margin-bottom:14px">
+        <h3>今天要处理 <span class="sub" id="ovTodoSub"></span></h3>
+        <div id="ovTodoBox" style="margin-top:8px"></div>
+      </div>
 
       <div class="stat-strip" id="ovStats">
         <div class="stat-cell" data-go="money"><div class="k">本月支出</div><div class="v skel" id="ovSpend">…</div><div class="note" id="ovBudgetNote">预算加载中</div></div>
@@ -542,22 +626,44 @@ code.k{background:#efece3;border-radius:5px;padding:1px 7px;font-size:12px;font-
       <p class="page-desc">要事在前，做完划掉。过期未完成的会标红提醒。</p>
 
       <div class="card">
-        <h3>新日程</h3>
+        <h3>新日程 <span class="sub">要占一段时间的（旅行 / 回家 / 出差），把「结束日期」也填上</span></h3>
         <div class="form-row" style="margin-top:12px">
-          <div class="field"><label>日期</label><input type="date" id="scDate"></div>
+          <div class="field"><label>开始日期</label><input type="date" id="scDate"></div>
+          <div class="field"><label>结束日期<span style="color:var(--line2)"> · 可留空</span></label><input type="date" id="scEnd"></div>
           <div class="field"><label>时间</label><input type="time" id="scTime"></div>
-          <div class="field" style="flex:2"><label>事项</label><input type="text" id="scTitle" placeholder="如：报税 / 复核凭证 / 和霍焱对账" maxlength="50"></div>
+          <div class="field" style="flex:2;min-width:180px"><label>事项</label><input type="text" id="scTitle" placeholder="如：回深圳陪奶奶过生日" maxlength="50"></div>
           <div class="field"><label>地点</label><input type="text" id="scPlace" placeholder="可选" maxlength="20"></div>
           <button class="btn" id="scSave">加 入</button>
         </div>
+        <div class="sc-preview" id="scPreview"></div>
       </div>
 
       <div class="card">
-        <div style="display:flex;align-items:center;gap:12px">
+        <div class="cal-bar">
           <h3>日程表</h3>
-          <label style="margin-left:auto;font-size:12px;color:var(--soft);display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="scHideDone"> 隐藏已完成</label>
+          <div class="seg" id="scSeg">
+            <button data-view="cal" class="on">月历</button>
+            <button data-view="list">列表</button>
+          </div>
+          <label style="font-size:12px;color:var(--soft);display:flex;gap:6px;align-items:center;cursor:pointer;margin-left:auto"><input type="checkbox" id="scHideDone"> 隐藏已完成</label>
         </div>
-        <div id="schedBox" style="margin-top:10px"></div>
+
+        <div id="scCalWrap">
+          <div class="cal-bar" style="margin-top:14px">
+            <span class="month-nav" style="gap:10px"><span id="scLabel" style="font-family:var(--serif);font-size:19px">—</span></span>
+            <span class="cal-nav"><button id="scPrev">‹</button><button id="scToday">今天</button><button id="scNext">›</button></span>
+          </div>
+          <div class="cal-grid" id="scGrid"></div>
+          <div class="cal-legend">
+            <span><i style="background:#eef1e8;border:1px solid #dde3d3"></i>日程</span>
+            <span><i style="background:#f7ece7;border:1px solid #efd9cf"></i>跨天段落</span>
+            <span><i style="background:var(--clay)"></i>今天</span>
+            <span>点任意一天，看当天安排</span>
+          </div>
+        </div>
+
+        <div id="schedBox" style="margin-top:10px;display:none"></div>
+        <div id="scDayDetail"></div>
       </div>
     </section>
 
@@ -1766,80 +1872,331 @@ const Fit = {
 
 /* ============================================================
    模块四：日程统筹
+   —— 一条日程可以是一天，也可以是一段（如 9/17–9/20 回深圳陪奶奶过生日）
+   ------------------------------------------------------------
+   架构说明（防循环）：
+   render() 是唯一入口，按顺序调用 renderList / renderCal / renderDayDetail，
+   三个渲染函数之间互不调用；交互只改数据或状态，再回到 render() 统一刷新。
    ============================================================ */
+
+/* ---------- 日期 / 区间小工具（只依赖 p3 数据层的通用函数） ---------- */
+function cnDate(d){ return (+d.slice(5,7)) + "月" + (+d.slice(8)) + "日 " + wdCN(d); }
+function scMD(d, base){
+  const md = (+d.slice(5,7)) + "/" + (+d.slice(8));
+  return (base && d.slice(0,4) !== base.slice(0,4)) ? (d.slice(0,4) + "/" + md) : md;
+}
+/* 结束日：留空或早于开始 → 当作单日 */
+function scEnd(r){ const e = (r && r.endDate) ? String(r.endDate).trim() : ""; return (e && e >= r.date) ? e : r.date; }
+function scDays(r){ return dayDiff(scEnd(r), r.date) + 1; }
+function scOn(r, d){ return r.date <= d && d <= scEnd(r); }
+function scRangeTxt(r, base){ const e = scEnd(r); return e === r.date ? "" : (scMD(r.date, base) + "–" + scMD(e, base) + " · " + scDays(r) + " 天"); }
+function scColor(r){
+  const s = String(r._id || r.title || "x");
+  let h = 7;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 100003;
+  return "c" + (h % 4);
+}
+function ymd(dt){ return dt.getFullYear() + "-" + pad(dt.getMonth()+1) + "-" + pad(dt.getDate()); }
+/* 云端表还没加 endDate 列时，给一句能直接照做的事，而不是丢一个 PGRST204 */
+function scSaveHint(msg){
+  const m = String(msg || "");
+  if (/endDate/i.test(m) || /PGRST204/i.test(m) || /Could not find/i.test(m)){
+    return "跨天需要云端先加一列：Supabase → SQL Editor 跑 alter table public.lw_schedule add column if not exists \"endDate\" text;  （清空「结束日期」也能先按单日存）";
+  }
+  return "保存失败：" + m;
+}
+
+/* ---------- 单条日程的 HTML（列表 / 当天详情共用） ---------- */
+function scRowHtml(r, today){
+  const done = r.done === "是";
+  const e = scEnd(r);
+  const live = !done && r.date <= today && today <= e;   /* 今天正处在区间内 */
+  const late = !done && e < today;                       /* 整段都过期了 */
+  const rg = scRangeTxt(r, today);
+  return '<div class="sched-item' + (done ? " done" : "") + (late ? " past-due" : "") + '" data-rid="' + r._id + '">' +
+    '<button class="pill-done' + (done ? " on" : "") + '" data-act="done">✓</button>' +
+    '<span class="tm' + (r.time ? "" : " none") + '">' + esc(r.time || "—") + '</span>' +
+    '<span class="tt"><b>' + esc(r.title) + '</b>' +
+      (r.place ? '<small>📍' + esc(r.place) + '</small>' : '') +
+      (rg ? '<small class="rg">' + rg + '</small>' : '') +
+      (live ? '<span class="live">进行中</span>' : (late ? '<span class="late">已逾期</span>' : '')) +
+    '</span>' +
+    '<span class="ops" style="display:flex"><button class="icon-btn" data-act="del">✕</button></span>' +
+  '</div>';
+}
+
+/* ---------- 操作绑定：只改数据，刷新交给 Data 的 emit → render ---------- */
+function scBindOps(scope, rows){
+  $$(scope + " [data-act]").forEach(b => b.addEventListener("click", async () => {
+    const host = b.closest("[data-rid]");
+    if (!host) return;
+    const rid = host.dataset.rid;
+    const row = (rows || []).find(r => r._id === rid);
+    if (!row) return;
+    try {
+      if (b.dataset.act === "done"){
+        /* endDate 为空就不带上这一列：云端还没跑 endDate 迁移时，勾选/删除照常可用 */
+        const patch = {
+          date: row.date, time: row.time || "", title: row.title,
+          place: row.place || "", note: row.note || "", done: row.done === "是" ? "否" : "是"
+        };
+        if (row.endDate) patch.endDate = row.endDate;
+        await Data.update("schedule", rid, patch);
+      } else {
+        if (!confirm("删除这条日程？")) return;
+        await Data.remove("schedule", rid);
+      }
+    } catch(e){ toast("操作失败：" + (e.message||e)); }
+  }));
+}
+
 const Sched = {
   hideDone: false,
+  view: "cal",                 /* cal | list */
+  calY: 0, calM: 0,
+  selDate: "",
+
   init(){
-    $("#scDate").value = todayStr();
+    const t = todayStr();
+    this.calY = +t.slice(0,4); this.calM = +t.slice(5,7); this.selDate = t;
+    $("#scDate").value = t;
+    $("#scDate").addEventListener("change", () => this.preview());
+    $("#scEnd").addEventListener("change", () => this.preview());
     $("#scSave").addEventListener("click", () => this.save());
     $("#scHideDone").addEventListener("change", () => { this.hideDone = $("#scHideDone").checked; this.render(); });
+    $$("#scSeg button").forEach(b => b.addEventListener("click", () => {
+      this.view = b.dataset.view;
+      $$("#scSeg button").forEach(x => x.classList.toggle("on", x === b));
+      this.render();
+    }));
+    /* 月历格子用事件委托（只绑一次），避免 renderCal 里再去碰 pickDay */
+    $("#scGrid").addEventListener("click", e => {
+      const cell = e.target.closest(".cal-cell");
+      if (cell) this.pickDay(cell.dataset.day);
+    });
+    $("#scPrev").addEventListener("click", () => this.shiftMonth(-1));
+    $("#scNext").addEventListener("click", () => this.shiftMonth(1));
+    $("#scToday").addEventListener("click", () => {
+      const t2 = todayStr();
+      this.calY = +t2.slice(0,4); this.calM = +t2.slice(5,7); this.selDate = t2;
+      this.render();
+    });
     Data.on("schedule", () => this.render());
+    this.preview();
   },
+
+  shiftMonth(n){
+    let y = this.calY, m = this.calM + n;
+    if (m < 1){ m = 12; y -= 1; }
+    else if (m > 12){ m = 1; y += 1; }
+    this.calY = y; this.calM = m;
+    this.render();
+  },
+
+  /* 输入时实时预览这段日期跨度 */
+  preview(){
+    const el = $("#scPreview");
+    if (!el) return;
+    const s = $("#scDate").value, e = $("#scEnd").value;
+    if (!s){ el.innerHTML = ""; return; }
+    if (!e || e === s){ el.innerHTML = "单日日程 · <b>" + cnDate(s) + "</b>"; return; }
+    if (e < s){ el.innerHTML = '<span style="color:var(--clay)">结束日期早于开始日期，保存时会自动调正</span>'; return; }
+    el.innerHTML = "跨天日程 · <b>" + cnDate(s) + " → " + cnDate(e) + "</b> · 共 " + (dayDiff(e, s) + 1) + " 天";
+  },
+
   async save(){
     const title = $("#scTitle").value.trim();
     if (!title){ toast("写点什么吧"); return; }
+    let date = $("#scDate").value || todayStr();
+    let endDate = $("#scEnd").value || "";
+    if (endDate && endDate < date){ const t = date; date = endDate; endDate = t; toast("开始 / 结束日期已自动调正"); }
+    if (endDate === date) endDate = "";
+    /* 单日就不写 endDate 这一列，避免云端未迁移时报「找不到列」 */
     const props = {
-      date: $("#scDate").value || todayStr(),
-      time: $("#scTime").value || "",
-      title,
-      place: $("#scPlace").value.trim(),
-      note: "",
-      done: "否"
+      date, time: $("#scTime").value || "", title,
+      place: $("#scPlace").value.trim(), note: "", done: "否"
     };
+    if (endDate) props.endDate = endDate;
     try {
       await Data.add("schedule", props);
-      $("#scTitle").value = ""; $("#scTime").value = ""; $("#scPlace").value = "";
-      toast("已加入日程");
-    } catch(e){ toast("保存失败：" + (e.message||e)); }
+      $("#scTitle").value = ""; $("#scTime").value = ""; $("#scPlace").value = ""; $("#scEnd").value = "";
+      this.selDate = date;
+      this.calY = +date.slice(0,4); this.calM = +date.slice(5,7);
+      this.preview();
+      toast(endDate ? ("已加入日程 · 共 " + (dayDiff(endDate, date) + 1) + " 天") : "已加入日程");
+    } catch(e){
+      toast(scSaveHint(e && e.message ? e.message : e));
+    }
   },
+
+  /* ---------- 统一渲染入口 ---------- */
   render(){
     const c = Data.cache.schedule;
-    if (c && c.error){ $("#schedBox").innerHTML = errCard(c.error, "schedule"); return; }
-    let rows = (c && c.rows || []).slice().sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
+    const rows = ((c && c.rows) || []).filter(r => !this.hideDone || r.done !== "是");
+    const isCal = this.view === "cal";
+    const calWrap = $("#scCalWrap"), listBox = $("#schedBox"), dayBox = $("#scDayDetail");
+
+    if (c && c.error){
+      calWrap.style.display = "none";
+      dayBox.innerHTML = "";
+      listBox.style.display = "";
+      listBox.innerHTML = errCard(c.error, "schedule");
+      return;
+    }
+    calWrap.style.display = isCal ? "" : "none";
+    listBox.style.display = isCal ? "none" : "";
+    if (isCal){
+      this.renderCal(rows);
+      this.renderDayDetail(rows);
+    } else {
+      dayBox.innerHTML = "";
+      this.renderList(rows);
+    }
+  },
+
+  /* ---------- 视图一：列表 ---------- */
+  renderList(rows){
+    const box = $("#schedBox");
+    if (!rows.length){
+      box.innerHTML = '<div class="empty"><div class="zh">虚 位 以 待</div>日程是空的，也是好事</div>';
+      return;
+    }
     const today = todayStr();
     const groups = {};
     rows.forEach(r => { (groups[r.date] = groups[r.date] || []).push(r); });
     const dates = Object.keys(groups).sort();
-    /* 未来的在前，过去的沉底 */
-    const future = dates.filter(d => d >= today);
-    const past = dates.filter(d => d < today).reverse();
-    const ordered = future.concat(past);
-    if (!ordered.length){
-      $("#schedBox").innerHTML = '<div class="empty"><div class="zh">虚 位 以 待</div>日程是空的，也是好事</div>';
-      return;
-    }
-    $("#schedBox").innerHTML = ordered.map(d => {
-      let items = groups[d];
-      if (this.hideDone) items = items.filter(r => r.done !== "是");
-      if (!items.length) return "";
-      const isPast = d < today;
+    const active = dates.filter(d => groups[d].some(r => scEnd(r) >= today));
+    const past = dates.filter(d => active.indexOf(d) < 0).reverse();
+    box.innerHTML = active.concat(past).map(d => {
+      const items = groups[d].slice().sort((a,b) => String(a.time || "zz").localeCompare(String(b.time || "zz")));
+      const anyLive = items.some(r => r.done !== "是" && scOn(r, today));
+      const isPast = d < today && !anyLive;
+      const tail = d === today ? " · 今天" : (anyLive ? " · 进行中" : (isPast ? " · 已过" : ""));
       return '<div class="sched-day' + (isPast ? " past" : "") + '"><div class="dh">' +
-        '<span class="dt">' + d.slice(0,4) + " / " + d.slice(5).replace("-","/") + '</span><span class="dw">' + wdCN(d) +
-        (isPast ? " · 已过" : (d === today ? " · 今天" : "")) + '</span><span class="cnt">' + items.length + ' 项</span></div>' +
-        items.map(r => {
-          const done = r.done === "是";
-          const overdue = isPast && !done;
-          return '<div class="sched-item' + (done ? " done" : "") + (overdue ? " past-due" : "") + '" data-rid="' + r._id + '">' +
-            '<button class="pill-done' + (done ? " on" : "") + '" data-act="done">✓</button>' +
-            '<span class="tm' + (r.time ? "" : " none") + '">' + esc(r.time || "—") + '</span>' +
-            '<span class="tt"><b>' + esc(r.title) + '</b>' + (r.place ? '<small>📍' + esc(r.place) + '</small>' : '') + '</span>' +
-            '<span class="ops" style="display:flex"><button class="icon-btn" data-act="del">✕</button></span></div>';
-        }).join("") + '</div>';
+        '<span class="dt">' + d.slice(0,4) + " / " + d.slice(5).replace("-","/") + '</span>' +
+        '<span class="dw">' + wdCN(d) + tail + '</span>' +
+        '<span class="cnt">' + items.length + ' 项</span></div>' +
+        items.map(r => scRowHtml(r, today)).join("") + '</div>';
     }).join("");
-    $$("#schedBox [data-act]").forEach(b => b.addEventListener("click", async () => {
-      const item = b.closest(".sched-item");
-      const rid = item.dataset.rid;
-      const row = (Data.cache.schedule.rows || []).find(r => r._id === rid);
-      if (!row) return;
-      try {
-        if (b.dataset.act === "done"){
-          await Data.update("schedule", rid, { date: row.date, time: row.time, title: row.title, place: row.place, note: row.note||"", done: row.done === "是" ? "否" : "是" });
-        } else {
-          if (!confirm("删除这条日程？")) return;
-          await Data.remove("schedule", rid);
+    scBindOps("#schedBox", rows);
+  },
+
+  /* ---------- 视图二：月历 ----------
+     同一周内按「车道」排布，跨天日程占满一格一格连成色带 */
+  calLanes(weekDays, rows){
+    const segs = rows
+      .filter(r => r.date <= weekDays[6] && scEnd(r) >= weekDays[0])
+      .sort((a,b) => a.date.localeCompare(b.date) || scEnd(b).localeCompare(scEnd(a)));
+    const lanes = [];
+    segs.forEach(r => {
+      const e = scEnd(r);
+      let from = weekDays.findIndex(d => d >= r.date);
+      if (from < 0) from = 0;
+      let to = 6;
+      while (to > 0 && weekDays[to] > e) to -= 1;
+      if (to < from) return;
+      let slot = -1;
+      for (let li = 0; li < lanes.length; li++){
+        if (lanes[li].every(s => s.to < from || s.from > to)){ slot = li; break; }
+      }
+      if (slot < 0){ lanes.push([]); slot = lanes.length - 1; }
+      /* opensL / opensR：这一段是被周界截断的（真起止不在本周），色带不封口 */
+      lanes[slot].push({
+        from, to, ev: r,
+        opensL: from === 0 && r.date < weekDays[0],
+        opensR: to === 6 && e > weekDays[6]
+      });
+    });
+    return lanes;
+  },
+
+  renderCal(rows){
+    const y = this.calY, m = this.calM;
+    $("#scLabel").textContent = y + " 年 " + m + " 月";
+    const lead = new Date(y, m - 1, 1).getDay();
+    const daysInMonth = new Date(y, m, 0).getDate();
+    const total = Math.ceil((lead + daysInMonth) / 7) * 7;
+    const days = [];
+    for (let i = 0; i < total; i++){
+      const dt = new Date(y, m - 1, 1 - lead + i);
+      days.push({ d: ymd(dt), out: dt.getMonth() !== m - 1 });
+    }
+    const today = todayStr();
+    const MAXLANE = 3;
+    let html = '<div class="cal-head">' + ["日","一","二","三","四","五","六"].map((w, i) =>
+      '<span' + ((i === 0 || i === 6) ? ' class="wk"' : '') + '>' + w + '</span>').join("") + '</div>';
+
+    for (let w = 0; w < days.length / 7; w++){
+      const week = days.slice(w * 7, w * 7 + 7);
+      const lanes = this.calLanes(week.map(c => c.d), rows);
+      html += '<div class="cal-week">';
+      for (let j = 0; j < 7; j++){
+        const c = week[j];
+        const cls = ["cal-cell"];
+        if (c.out) cls.push("out");
+        if (c.d === today) cls.push("today");
+        if (c.d === this.selDate) cls.push("sel");
+        if (j === 0 || j === 6) cls.push("weekend");
+        html += '<div class="' + cls.join(" ") + '" data-day="' + c.d + '">' +
+          '<span class="cd">' + (+c.d.slice(8)) + '</span>';
+        for (let li = 0; li < Math.min(lanes.length, MAXLANE); li++){
+          const seg = lanes[li].find(s => s.from <= j && j <= s.to);
+          if (!seg){ html += '<span class="cal-chip ghost"></span>'; continue; }
+          const isStart = seg.from === j, isEnd = seg.to === j;
+          const span = (isStart && isEnd) ? "span-only" : (isStart ? "span-start" : (isEnd ? "span-end" : "span-mid"));
+          const label = (isStart || j === 0) ? seg.ev.title : "";
+          const tip = seg.ev.title + (scRangeTxt(seg.ev, today) ? " · " + scRangeTxt(seg.ev, today) : "") +
+                      (seg.ev.place ? " · " + seg.ev.place : "");
+          /* 只有「真正的起点 / 终点」才收圆角，被周界截断的那侧保持平口 */
+          const openL = isStart && seg.opensL, openR = isEnd && seg.opensR;
+          const lr = (isStart && !openL) ? "5px" : "2px";
+          const rr = (isEnd && !openR) ? "5px" : "2px";
+          let st = "border-radius:" + lr + " " + rr + " " + rr + " " + lr;
+          if (!(isStart && !openL)) st += ";border-left-color:transparent";
+          if (!(isEnd && !openR)) st += ";border-right-color:transparent";
+          html += '<span class="cal-chip ' + scColor(seg.ev) + ' ' + span +
+            (scEnd(seg.ev) < today ? " past" : "") + (seg.ev.done === "是" ? " done" : "") +
+            '" style="' + st + '" title="' + esc(tip) + '">' + (label ? esc(label) : "") + '</span>';
         }
-      } catch(e){ toast("操作失败：" + (e.message||e)); }
-    }));
+        let hidden = 0;
+        for (let li = MAXLANE; li < lanes.length; li++){
+          if (lanes[li].some(s => s.from <= j && j <= s.to)) hidden += 1;
+        }
+        if (hidden) html += '<span class="cal-more">+' + hidden + '</span>';
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+    $("#scGrid").innerHTML = html;   /* 点击由 init 里的委托统一处理 */
+  },
+
+  /* 点某一天：只改状态，然后回到统一入口刷新 */
+  pickDay(d){
+    if (!d) return;
+    this.selDate = d;
+    const tm = d.slice(0, 7);
+    if (+tm.slice(0,4) !== this.calY || +tm.slice(5,7) !== this.calM){
+      this.calY = +tm.slice(0,4);
+      this.calM = +tm.slice(5,7);
+    }
+    this.render();
+  },
+
+  /* ---------- 月历下方的「这一天」明细 ---------- */
+  renderDayDetail(rows){
+    const box = $("#scDayDetail");
+    const today = todayStr();
+    const d = this.selDate || today;
+    const items = rows.filter(r => scOn(r, d))
+      .sort((a,b) => String(a.time || "zz").localeCompare(String(b.time || "zz")));
+    let html = '<div class="cal-day-hd"><b>' + cnDate(d) + '</b>' +
+      '<span style="margin-left:8px">' + items.length + ' 项安排</span>' +
+      (d === today ? '<span style="margin-left:8px;color:var(--clay)">今天</span>' : '') + '</div>';
+    html += items.length
+      ? items.map(r => scRowHtml(r, today)).join("")
+      : '<div class="empty" style="padding:16px 0">这天空着，正好留白</div>';
+    box.innerHTML = html;
+    scBindOps("#scDayDetail", rows);
   }
 };
 
@@ -2200,12 +2557,17 @@ const Overview = {
     el("#ovHabit").textContent = doneN + " / " + habits.length;
     el("#ovHabitNote").textContent = habits.length ? (doneN === habits.length && habits.length > 0 ? "全部完成，漂亮 🎉" : "还差 " + (habits.length - doneN) + " 个") : "添加第一个小习惯";
 
-    /* 日程 */
-    const sched = (Data.cache.schedule && Data.cache.schedule.rows || []).filter(r => r.date >= today && r.done !== "是").sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
-    const next = sched[0];
-    el("#ovSched").textContent = next ? (next.date === today ? "今天" : next.date.slice(5).replace("-","/")) : "空闲";
-    el("#ovSched").style.fontSize = next && next.title.length > 6 ? "17px" : "";
-    el("#ovSchedNote").textContent = next ? next.title.slice(0, 16) + (next.time ? " · " + next.time : "") : (sched.length ? "" : "未来日程为空");
+    /* 日程：今天正处在区间内的优先（跨天活动算「进行中」），其次最近的将来 */
+    const scAll = (Data.cache.schedule && Data.cache.schedule.rows || []).filter(r => r.done !== "是");
+    const ongoing = scAll.filter(r => r.date <= today && today <= scEnd(r))
+      .sort((a,b) => String(a.time||"zz").localeCompare(String(b.time||"zz")));
+    const next = scAll.filter(r => r.date > today)
+      .sort((a,b) => (a.date + (a.time||"")).localeCompare(b.date + (b.time||"")))[0];
+    el("#ovSched").textContent = ongoing.length ? "进行中" : (next ? next.date.slice(5).replace("-","/") : "空闲");
+    el("#ovSched").style.fontSize = (!ongoing.length && next && next.title.length > 6) ? "17px" : "";
+    el("#ovSchedNote").textContent = ongoing.length
+      ? (ongoing[0].title.slice(0, 16) + (ongoing.length > 1 ? " 等 " + ongoing.length + " 项" : ""))
+      : (next ? (next.title.slice(0, 16) + (next.time ? " · " + next.time : "")) : "未来日程为空");
     /* 待买 */
     const buys = (Data.cache.shopping && Data.cache.shopping.rows || []).filter(r => r.bought !== "是");
     el("#ovBuy").textContent = buys.length + " 项";
@@ -2226,6 +2588,83 @@ const Overview = {
     const mdRows = (Data.cache.media && Data.cache.media.rows || []).filter(r => (r.recordDate||"").startsWith(today.slice(0,4)));
     el("#ovMedia").textContent = mdRows.length + " 件";
     el("#ovMediaNote").textContent = mdRows.length ? ("今年平均分 " + (mdRows.filter(r=>num(r.rating)>0).length ? (mdRows.filter(r=>num(r.rating)>0).reduce((s,r)=>s+num(r.rating),0)/mdRows.filter(r=>num(r.rating)>0).length).toFixed(1) : "—")) : "开始收藏第一件";
+
+    /* 顶部「今天要处理」——逾期 + 今天进行中 + 今天该做的 */
+    this.renderTodo(today);
+  },
+
+  /* 置顶待办：每条给一个一键处理按钮 */
+  renderTodo(today){
+    const box = $("#ovTodoBox");
+    if (!box) return;
+    const sub = $("#ovTodoSub");
+    const MAX = 6;
+    const scRows = (Data.cache.schedule && Data.cache.schedule.rows || []);
+    const tasks = [];
+
+    /* 1. 逾期未完成的日程（整段都过去了） */
+    scRows.filter(r => r.done !== "是" && scEnd(r) < today)
+      .sort((a,b) => scEnd(a).localeCompare(scEnd(b)))
+      .forEach(r => tasks.push({
+        tg: "逾期", cls: "late", op: "done", id: r._id, primary: true, act: "完成",
+        tx: r.title + (scEnd(r) > r.date ? "（" + scMD(r.date, today) + "–" + scMD(scEnd(r), today) + "）" : ""),
+        note: dayDiff(today, scEnd(r)) + " 天前就该做完"
+      }));
+
+    /* 2. 今天正处在区间内的日程（跨天的会一直出现在这里） */
+    scRows.filter(r => r.done !== "是" && r.date <= today && today <= scEnd(r))
+      .sort((a,b) => String(a.time||"zz").localeCompare(String(b.time||"zz")))
+      .forEach(r => {
+        const left = dayDiff(scEnd(r), today);
+        tasks.push({
+          tg: left > 0 ? "进行中" : "今天", cls: "sched", op: "done", id: r._id, primary: true, act: "完成",
+          tx: r.title + (r.place ? "（" + r.place + "）" : ""),
+          note: (r.time ? r.time : "") + (left > 0 ? (r.time ? " · " : "") + "还剩 " + left + " 天" : "")
+        });
+      });
+
+    /* 3. 今天还没打卡的习惯 */
+    const habits = (Data.cache.habit && Data.cache.habit.rows || []);
+    const todayLogs = (Data.cache.habitLog && Data.cache.habitLog.rows || []).filter(r => r.date === today);
+    habits.filter(h => !todayLogs.some(l => l.habitId === h._id && (num(l.value)||0) > 0))
+      .forEach(h => tasks.push({
+        tg: "习惯", cls: "habit", op: "habit", id: h._id, primary: false, act: "去打卡",
+        tx: h.name, note: "今天还没打卡"
+      }));
+
+    const shown = tasks.slice(0, MAX);
+    if (sub) sub.textContent = tasks.length ? (tasks.length + " 项待处理" + (tasks.length > MAX ? "，先显示 " + MAX + " 项" : "")) : "";
+    if (!tasks.length){
+      box.innerHTML = '<div class="empty" style="padding:14px 0">今天没有欠账，随便安排。</div>';
+      return;
+    }
+    box.innerHTML = shown.map((t, i) =>
+      '<div class="todo-row">' +
+        '<span class="tg ' + t.cls + '">' + t.tg + '</span>' +
+        '<span class="tx">' + esc(t.tx) + (t.note ? '<small>' + esc(t.note) + '</small>' : '') + '</span>' +
+        '<button class="go' + (t.primary ? " primary" : "") + '" data-i="' + i + '">' + t.act + '</button>' +
+      '</div>').join("");
+
+    $$("#ovTodoBox .go").forEach(b => b.addEventListener("click", async () => {
+      const t = shown[+b.dataset.i];
+      if (!t) return;
+      try {
+        if (t.op === "done"){
+          const row = scRows.find(x => x._id === t.id);
+          if (!row) return;
+          const patch = {
+            date: row.date, time: row.time || "", title: row.title,
+            place: row.place || "", note: row.note || "", done: "是"
+          };
+          if (row.endDate) patch.endDate = row.endDate;   /* 没这一列就不带，避免未迁移时报错 */
+          await Data.update("schedule", row._id, patch);
+          toast("已完成");
+        } else {
+          const h = habits.find(x => x._id === t.id);
+          if (h){ await Habit.toggleCheck(h); toast("已打卡"); }
+        }
+      } catch(e){ toast("操作失败：" + (e.message || e)); }
+    }));
   }
 };
 
