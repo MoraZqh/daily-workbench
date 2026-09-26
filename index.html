@@ -348,6 +348,19 @@ h1.pt{font-family:var(--serif);font-size:28px;font-weight:600;letter-spacing:1px
 .act-换盆{background:#f0e6df;color:var(--clay)} .act-其他{background:#eceae4;color:var(--soft)}
 .act-拍照{background:#e6efe8;color:#5f7355}
 .log-thumb{width:48px;height:48px;border-radius:9px;object-fit:cover;cursor:zoom-in;flex:0 0 auto;border:1px solid var(--line);align-self:center}
+/* 书影音：关键字标签 + 详情浮层卡片 + 带图封面 */
+.md-kw{display:inline-block;font-size:11px;padding:2px 10px;border-radius:99px;background:#ece8df;color:#6b6353;margin:2px 6px 2px 0;letter-spacing:.5px}
+.md-kw.warm{background:#f4e6d8;color:#9a6b2f}
+.md-dcard{background:var(--card,#fbf9f3);border-radius:14px;max-width:520px;width:100%;max-height:86vh;overflow-y:auto;padding:22px 24px;cursor:default;box-shadow:0 18px 60px rgba(0,0,0,.5);color:#3a352c}
+.md-dcard h4{font-family:var(--serif);font-size:18px;line-height:1.4;margin:0}
+.md-dcard .meta{font-size:11.5px;color:#8a8272;letter-spacing:1px;margin-top:4px}
+.md-dcard .stars{color:#c9a227;font-size:12px;letter-spacing:2px}
+.md-dcard img.md-full{max-width:100%;max-height:56vh;border-radius:10px;margin:12px 0 4px;cursor:zoom-in}
+.md-dcard .note{white-space:pre-wrap;word-break:break-word;font-size:13.5px;line-height:1.8;color:#4a443a;background:#f2efe6;border-radius:10px;padding:12px 14px;margin-top:10px}
+.md-dcard .ops{display:flex;gap:10px;margin-top:16px;justify-content:flex-end}
+.cover.has-img{cursor:zoom-in}
+.cover .img-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cover .img-shade{position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(20,16,8,.72))}
 .lb-mask{position:fixed;inset:0;background:rgba(22,20,16,.9);z-index:130;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:24px;cursor:zoom-out;-webkit-tap-highlight-color:transparent}
 .lb-mask.on{display:flex}
 .lb-mask img{max-width:100%;max-height:82vh;border-radius:10px;box-shadow:0 12px 44px rgba(0,0,0,.55)}
@@ -701,21 +714,32 @@ code.k{background:#efece3;border-radius:5px;padding:1px 7px;font-size:12px;font-
       <div class="card">
         <h3>收一件</h3>
         <div class="form-row" style="margin-top:12px">
-          <div class="field" style="flex:2"><label>标题</label><input type="text" id="mdTitle" placeholder="书名 / 片名 / 专辑名" maxlength="40"></div>
-          <div class="field"><label>类型</label><select id="mdType"><option value="书">书</option><option value="影">影</option><option value="音">音</option></select></div>
+          <div class="field" style="flex:2"><label>标题</label><input type="text" id="mdTitle" placeholder="书名 / 片名 / AI提示词 / 万象天地停车场" maxlength="60"></div>
+          <div class="field"><label>类型（可自定义）</label><input type="text" id="mdType" list="mdTypeList" placeholder="书 / AI提示词 / 生活妙招" maxlength="12"></div>
           <div class="field"><label>状态</label><select id="mdStatus"><option value="想看">想看</option><option value="在看">在看</option><option value="看完">看完</option></select></div>
           <div class="field"><label>星级</label><select id="mdRating"><option value="0">未评</option><option value="1">★</option><option value="2">★★</option><option value="3">★★★</option><option value="4">★★★★</option><option value="5">★★★★★</option></select></div>
-          <div class="field" style="flex:2"><label>短评</label><input type="text" id="mdComment" placeholder="一句话足矣" maxlength="60"></div>
+          <div class="field" style="flex:2"><label>关键字（空格分隔，可搜索）</label><input type="text" id="mdKeywords" placeholder="求职 哲学 · 或：停车场 万象天地" maxlength="80"></div>
           <button class="btn" id="mdSave">收 藏</button>
         </div>
+        <div class="form-row" style="margin-top:10px">
+          <div class="field" style="flex:4"><label>详情（正文 / 提示词内容 / 备注）</label><textarea id="mdNote" rows="3" placeholder="可以贴整段 AI 提示词，或写停车楼层、缴费方式等细节" maxlength="2000"></textarea></div>
+          <div class="field" style="flex:0 0 auto;align-items:flex-start">
+            <label>贴图</label>
+            <button class="btn ghost" id="mdPhoto" style="white-space:nowrap">📷 拍照 / 传图</button>
+            <input type="file" id="mdPhotoFile" accept="image/*" style="display:none">
+            <img id="mdPhotoPrev" class="log-thumb" style="display:none" alt="预览">
+          </div>
+        </div>
+        <datalist id="mdTypeList"></datalist>
       </div>
 
       <div class="card">
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
           <h3>收藏夹</h3>
-          <div class="chips" id="mdChips" style="margin-left:auto"></div>
+          <input type="text" id="mdSearch" placeholder="🔍 搜标题 / 关键字 / 详情…" maxlength="30" style="margin-left:auto;flex:0 1 220px;padding:7px 12px;border:1px solid var(--line2);border-radius:9px;font-size:13px;background:#fff">
           <div class="view-toggle"><button id="mdViewWall" class="on">封面墙</button><button id="mdViewList">列表</button></div>
         </div>
+        <div class="chips" id="mdChips" style="margin-top:10px"></div>
         <div class="year-stat" style="margin-top:14px;padding-bottom:12px;border-bottom:1px solid var(--line)" id="mdYearStat"></div>
         <div id="mediaBox" style="margin-top:12px"></div>
       </div>
@@ -850,6 +874,7 @@ code.k{background:#efece3;border-radius:5px;padding:1px 7px;font-size:12px;font-
 
 <div class="toast" id="toast"></div>
 <div class="lb-mask" id="ocLb"></div>
+<div class="lb-mask" id="mdLb"></div>
 <script>
 "use strict";
 /* ============================================================
@@ -2271,13 +2296,32 @@ const Buy = {
    模块六：书影音收藏
    ============================================================ */
 const MD_COLORS = { "书":["#7d6b52","#5f7355"], "影":["#5b7d8f","#3f5e70"], "音":["#a5636f","#8a4d5c"] };
+const MD_TYPES = ["书","影","音","AI提示词","生活妙招"];
 const Media = {
   view: "wall",
   filter: "",
+  q: "",
+  pendingImg: null,
   init(){
     $("#mdSave").addEventListener("click", () => this.save());
     $("#mdViewWall").addEventListener("click", () => this.setView("wall"));
     $("#mdViewList").addEventListener("click", () => this.setView("list"));
+    $("#mdSearch").addEventListener("input", () => { this.q = $("#mdSearch").value.trim().toLowerCase(); this.render(); });
+    $("#mdPhoto").addEventListener("click", () => $("#mdPhotoFile").click());
+    $("#mdPhotoFile").addEventListener("change", async (e) => {
+      const f = e.target.files && e.target.files[0];
+      e.target.value = "";
+      if (!f) return;
+      if (!/^image\//.test(f.type)) { toast("请选择图片文件"); return; }
+      if (f.size > 20 * 1024 * 1024) { toast("图片太大（超过 20MB），换一张吧"); return; }
+      try {
+        this.pendingImg = await OCCompress(f);
+        const pv = $("#mdPhotoPrev");
+        pv.src = this.pendingImg; pv.style.display = "";
+        toast("图片已就绪，随下一条收藏一起保存");
+      } catch(err){ toast("图片处理失败，换一张试试"); }
+    });
+    $("#mdLb").addEventListener("click", (e) => { if (e.target === $("#mdLb")) $("#mdLb").classList.remove("on"); });
     Data.on("media", () => this.render());
   },
   setView(v){
@@ -2286,49 +2330,68 @@ const Media = {
     $("#mdViewList").classList.toggle("on", v === "list");
     this.render();
   },
+  kwOf(r){ return (r.comment || "").trim(); },
+  kwList(r){ return this.kwOf(r) ? this.kwOf(r).split(/\s+|，|,|、/).filter(Boolean) : []; },
   async save(){
     const title = $("#mdTitle").value.trim();
     if (!title){ toast("标题呢"); return; }
     const props = {
       title,
-      type: $("#mdType").value,
+      type: $("#mdType").value.trim() || "未分类",
       status: $("#mdStatus").value,
       rating: $("#mdRating").value,
-      comment: $("#mdComment").value.trim(),
+      comment: $("#mdKeywords").value.trim(),   /* 复用 comment 列存关键字，云端零迁移 */
+      note: $("#mdNote").value.trim(),
+      image: this.pendingImg || "",
       recordDate: todayStr()
     };
     try {
       await Data.add("media", props);
-      $("#mdTitle").value = ""; $("#mdComment").value = "";
+      $("#mdTitle").value = ""; $("#mdKeywords").value = ""; $("#mdNote").value = "";
+      $("#mdPhotoPrev").style.display = "none"; this.pendingImg = null;
       toast("已入收藏夹");
-    } catch(e){ toast("保存失败：" + (e.message||e)); }
+    } catch(e){
+      const m = String((e && e.message) || e);
+      if (/image|note|column|PGRST204/i.test(m)) toast("保存失败：云端表还缺 image/note 列。请在 Supabase SQL Editor 执行部署指南里的补列 SQL");
+      else toast("保存失败：" + m);
+    }
   },
   render(){
     const c = Data.cache.media;
     if (c && c.error){ $("#mediaBox").innerHTML = errCard(c.error, "media"); return; }
     const rows = (c && c.rows || []);
-    /* chips */
-    const defs = [["","全部"],["书","书"],["影","影"],["音","音"],["想看","想看"],["在看","在看"],["看完","看完"]];
-    $("#mdChips").innerHTML = defs.map(d => '<button class="chip' + (this.filter === d[0] ? " on" : "") + '" data-mf="' + d[0] + '">' + d[1] + '</button>').join("");
+
+    /* 类型联想：预置 + 你用过的类型自动进 datalist */
+    const used = [...new Set(rows.map(r => (r.type || "").trim()).filter(Boolean))];
+    $("#mdTypeList").innerHTML = [...new Set(MD_TYPES.concat(used))].map(t => '<option value="' + esc(t) + '">').join("");
+
+    /* chips：全部 + 全部类型 + 状态 */
+    const types = [...new Set(MD_TYPES.concat(used))];
+    const defs = [["", "全部"]].concat(types.map(t => [t, t])).concat([["想看","想看"],["在看","在看"],["看完","看完"]]);
+    $("#mdChips").innerHTML = defs.map(d => '<button class="chip' + (this.filter === d[0] ? " on" : "") + '" data-mf="' + esc(d[0]) + '">' + esc(d[1]) + '</button>').join("");
     $$("#mdChips .chip").forEach(ch => ch.addEventListener("click", () => { this.filter = ch.dataset.mf; this.render(); }));
 
     /* 年度统计 */
     const year = todayStr().slice(0,4);
     const yr = rows.filter(r => (r.recordDate||"").startsWith(year));
     const rated = yr.filter(r => num(r.rating) > 0);
+    const topTypes = types.slice(0, 4);
     $("#mdYearStat").innerHTML =
       '<span>' + year + ' 年<b>' + yr.length + '</b>件</span>' +
-      '<span>书<b>' + yr.filter(r=>r.type==="书").length + '</b></span>' +
-      '<span>影<b>' + yr.filter(r=>r.type==="影").length + '</b></span>' +
-      '<span>音<b>' + yr.filter(r=>r.type==="音").length + '</b></span>' +
+      topTypes.map(t => '<span>' + esc(t) + '<b>' + yr.filter(r => r.type === t).length + '</b></span>').join("") +
       '<span>平均分<b>' + (rated.length ? (rated.reduce((s,r)=>s+num(r.rating),0)/rated.length).toFixed(1) : "—") + '</b></span>' +
       '<span>全部收藏<b>' + rows.length + '</b>件</span>';
 
-    const shown = this.filter
-      ? rows.filter(r => r.type === this.filter || r.status === this.filter)
-      : rows;
+    /* 过滤：chip + 搜索（标题/类型/状态/关键字/详情） */
+    let shown = this.filter ? rows.filter(r => r.type === this.filter || r.status === this.filter) : rows;
+    if (this.q){
+      shown = shown.filter(r =>
+        ((r.title||"") + " " + (r.type||"") + " " + (r.status||"") + " " + this.kwOf(r) + " " + (r.note||"")).toLowerCase().includes(this.q));
+    }
+    const kwHtml = r => this.kwList(r).map(k => '<span class="md-kw' + (k.length > 2 ? " warm" : "") + '">#' + esc(k) + '</span>').join("");
     if (!shown.length){
-      $("#mediaBox").innerHTML = '<div class="empty"><div class="zh">虚 位 以 待</div>收藏夹还空着，值得填满</div>';
+      $("#mediaBox").innerHTML = '<div class="empty"><div class="zh">虚 位 以 待</div>' +
+        (this.q ? "没有匹配「" + esc(this.q) + "」的收藏" : "收藏夹还空着，值得填满") + '</div>';
       return;
     }
     const stars = r => { const n = num(r.rating)||0; return "★★★★★".slice(0,n) + "☆☆☆☆☆".slice(0,5-n); };
@@ -2337,7 +2400,9 @@ const Media = {
       $("#mediaBox").innerHTML = '<div class="wall">' + sorted.map((r, i) => {
         const cs = MD_COLORS[r.type] || ["#8a857c","#6a655c"];
         const ang = (i * 37) % 60 - 30;
-        return '<div class="cover" style="background:linear-gradient(' + (135 + ang) + 'deg,' + cs[0] + ',' + cs[1] + ')">' +
+        const img = r.image ? '<img class="img-bg" src="' + r.image + '" alt="">' + '<span class="img-shade"></span>' : "";
+        return '<div class="cover has-img" style="' + (r.image ? "" : "background:linear-gradient(" + (135 + ang) + "deg," + cs[0] + "," + cs[1] + ")") + '" data-md-open="' + r._id + '">' +
+          img +
           '<span class="stars">' + stars(r) + '</span><span class="badge">' + esc(r.status) + '</span>' +
           '<span class="ct">' + esc(r.title) + '</span><span class="cs">' + esc(r.type) + ' · ' + esc((r.recordDate||"").slice(0,7)) + '</span></div>';
       }).join("") + '</div>';
@@ -2345,16 +2410,55 @@ const Media = {
       const TAG_BG = { "书":"#ece8df", "影":"#e3ecf0", "音":"#f4e6ea" };
       const TAG_C  = { "书":"#7d6b52", "影":"#5b7d8f", "音":"#a5636f" };
       $("#mediaBox").innerHTML = sorted.map(r =>
-        '<div class="media-list-row"><span class="tag" style="background:' + TAG_BG[r.type] + ';color:' + TAG_C[r.type] + '">' + esc(r.type) + ' · ' + esc(r.status) + '</span>' +
+        '<div class="media-list-row" data-md-open="' + r._id + '" style="cursor:pointer">' +
+        (r.image ? '<img class="log-thumb" src="' + r.image + '" alt="">' : "") +
+        '<span class="tag" style="background:' + (TAG_BG[r.type] || "#eceae3") + ';color:' + (TAG_C[r.type] || "#6b6558") + '">' + esc(r.type) + ' · ' + esc(r.status) + '</span>' +
         '<div class="bd"><b>' + esc(r.title) + '</b><span class="stars">' + (num(r.rating) > 0 ? stars(r) : "") + '</span><span style="font-size:11.5px;color:var(--soft)">' + esc((r.recordDate||"").slice(0,10)) + '</span>' +
-        (r.comment ? '<div class="cm">' + esc(r.comment) + '</div>' : '') + '</div>' +
+        (this.kwOf(r) ? '<div style="margin-top:3px">' + kwHtml(r) + '</div>' : '') +
+        (r.note ? '<div class="cm">' + esc(r.note.length > 60 ? r.note.slice(0,60) + "…" : r.note) + '</div>' : '') + '</div>' +
         '<span class="ops" style="display:flex"><button class="icon-btn" data-md-del="' + r._id + '">✕</button></span></div>').join("");
-      $$("#mediaBox [data-md-del]").forEach(b => b.addEventListener("click", async () => {
-        if (!confirm("从收藏夹移除？")) return;
-        try { await Data.remove("media", b.dataset.mdDel); toast("已移除"); }
-        catch(e){ toast("删除失败：" + (e.message||e)); }
-      }));
     }
+    /* 打开详情 */
+    $$("#mediaBox [data-md-open]").forEach(elCard => elCard.addEventListener("click", (e) => {
+      if (e.target.closest("[data-md-del]")) return;
+      const r = (Data.cache.media.rows || []).find(x => x._id === elCard.dataset.mdOpen);
+      if (r) this.detail(r);
+    }));
+    /* 删除 */
+    $$("#mediaBox [data-md-del]").forEach(b => b.addEventListener("click", async () => {
+      if (!confirm("从收藏夹移除？")) return;
+      try { await Data.remove("media", b.dataset.mdDel); toast("已移除"); }
+      catch(e){ toast("删除失败：" + (e.message||e)); }
+    }));
+  },
+  detail(r){
+    const kw = this.kwList(r);
+    $("#mdLb").innerHTML = '<div class="md-dcard">' +
+      '<h4>' + esc(r.title) + '</h4>' +
+      '<div class="meta">' + esc(r.type || "未分类") + ' · ' + esc(r.status || "") +
+      (r.recordDate ? ' · ' + esc(r.recordDate.slice(0,10)) : '') +
+      (num(r.rating) > 0 ? ' <span class="stars">' + ("★★★★★".slice(0, num(r.rating))) + '</span>' : '') + '</div>' +
+      (kw.length ? '<div style="margin-top:8px">' + kw.map(k => '<span class="md-kw' + (k.length > 2 ? " warm" : "") + '">#' + esc(k) + '</span>').join("") + '</div>' : '') +
+      (r.image ? '<img class="md-full" src="' + r.image + '" alt="详情图">' : '') +
+      (r.note ? '<div class="note">' + esc(r.note) + '</div>' : '') +
+      '<div class="ops"><button class="btn ghost" data-mdd-del>移除</button><button class="btn" data-mdd-close>关 闭</button></div>' +
+      '</div>';
+    $("#mdLb").classList.add("on");
+    const close = () => $("#mdLb").classList.remove("on");
+    $("#mdLb [data-mdd-close]").addEventListener("click", close);
+    $("#mdLb [data-mdd-del]").addEventListener("click", async () => {
+      if (!confirm("从收藏夹移除？")) return;
+      try { await Data.remove("media", r._id); close(); toast("已移除"); }
+      catch(e){ toast("删除失败：" + (e.message||e)); }
+    });
+    const img = $("#mdLb .md-full");
+    if (img) img.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const lb = $("#ocLb");
+      lb.innerHTML = '<img src="' + r.image + '" alt="">' +
+        '<div class="lb-cap"><b>' + esc(r.title) + '</b>' + (kw.length ? '<br>' + esc(kw.join(" · ")) : "") + '<br>点击任意处关闭</div>';
+      lb.classList.add("on");
+    });
   }
 };
 
