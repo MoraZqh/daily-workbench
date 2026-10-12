@@ -7,7 +7,8 @@
 <script id="LW_TABLES" type="application/json">{
   "expense": "", "budget": "", "habit": "", "habitLog": "",
   "fitness": "", "plan": "", "goal": "", "schedule": "",
-  "shopping": "", "media": "", "orchid": ""
+  "shopping": "", "media": "", "orchid": "",
+  "bodyProfile": "", "wardrobe": "", "outfitLog": ""
 }</script>
 <!-- Supabase 预置配置：填好后每台新设备打开只需登录，不必再手填地址和 key -->
 <script id="LW_SUPABASE" type="application/json">{
@@ -470,6 +471,7 @@ code.k{background:#efece3;border-radius:5px;padding:1px 7px;font-size:12px;font-
 }
 </style>
 </head>
+
 <body>
 <div class="shell">
   <aside class="side">
@@ -590,45 +592,76 @@ code.k{background:#efece3;border-radius:5px;padding:1px 7px;font-size:12px;font-
       </div>
     </section>
 
-    <!-- ================= 减脂健身 ================= -->
+    <!-- ================= 穿搭指导 ================= -->
     <section class="page" id="page-fit">
-      <div class="kicker">04 · FIT</div>
-      <h1 class="pt">减脂健身</h1>
-      <p class="page-desc">体重只是数字，趋势才是答案。记录体重与体脂，看 7 日均线慢慢向下。</p>
+      <div class="kicker">04 · STYLE</div>
+      <h1 class="pt">穿搭指导</h1>
+      <p class="page-desc">按身型和天气搭配，已购衣柜优先穿，缺的那件推荐买。</p>
 
-      <div class="kpis">
-        <div class="kpi"><div class="k">最新体重</div><div class="v" id="ftWeight">— <small>kg</small></div></div>
-        <div class="kpi"><div class="k">7 日均线</div><div class="v" id="ftMA">— <small>kg</small></div></div>
-        <div class="kpi"><div class="k">BMI</div><div class="v" id="ftBMI">—</div></div>
-        <div class="kpi"><div class="k">目标进度</div><div class="v" id="ftGoalPct">—</div></div>
-      </div>
-
-      <div class="card" style="margin-top:14px">
-        <h3>记一笔身体数据</h3>
+      <div class="card">
+        <h3>身体档案 <span class="sub">填一次三围，身型自动推断</span></h3>
         <div class="form-row" style="margin-top:12px">
-          <div class="field"><label>日期</label><input type="date" id="ftDate"></div>
-          <div class="field"><label>体重 kg</label><input type="number" step="0.1" id="ftW" placeholder="65.0"></div>
-          <div class="field"><label>体脂 %</label><input type="number" step="0.1" id="ftF" placeholder="22.5"></div>
-          <div class="field"><label>摄入 kcal</label><input type="number" id="ftIn" placeholder="可选"></div>
-          <div class="field"><label>消耗 kcal</label><input type="number" id="ftOut" placeholder="可选"></div>
-          <div class="field" style="flex:2"><label>备注</label><input type="text" id="ftNote" placeholder="可选" maxlength="40"></div>
-          <button class="btn" id="ftSave">记 录</button>
+          <div class="field"><label>身高 cm</label><input type="number" step="1" id="bpHeight" placeholder="162"></div>
+          <div class="field"><label>体重 kg</label><input type="number" step="0.1" id="bpWeight" placeholder="52"></div>
+          <div class="field"><label>胸围 cm</label><input type="number" step="1" id="bpBust" placeholder="86"></div>
+          <div class="field"><label>腰围 cm</label><input type="number" step="1" id="bpWaist" placeholder="66"></div>
+          <div class="field"><label>臀围 cm</label><input type="number" step="1" id="bpHip" placeholder="92"></div>
+          <div class="field"><label>身型</label><select id="bpShape"><option value="">自动推断</option><option>梨形</option><option>苹果形</option><option>沙漏</option><option>H形</option><option>倒三角</option></select></div>
+          <div class="field"><label>城市</label><input type="text" id="bpCity" placeholder="深圳" maxlength="10"></div>
+          <div class="field" style="flex:2"><label>常穿尺码等备注</label><input type="text" id="bpNote" placeholder="上衣 S / 裤 26" maxlength="30"></div>
+          <button class="btn" id="bpSave">保 存</button>
         </div>
-        <div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:12px;font-size:12.5px;color:var(--soft)">
-          <span>目标体重：<b id="ftGoalV" style="cursor:pointer;color:var(--ink)">未设置</b>（点击修改）</span>
-          <span>近 7 日平均热量缺口：<b id="ftDeficit" style="color:var(--ink)">—</b></span>
-        </div>
+        <div id="bpHint" style="margin-top:8px;font-size:12.5px;color:var(--soft)"></div>
       </div>
 
       <div class="card">
-        <h3>趋势</h3>
-        <div class="chart-box" id="ftChart"></div>
-        <div class="legend"><span><i style="background:#b96a4b"></i>体重</span><span><i style="background:#5b7d8f"></i>体脂</span><span><i style="background:#5f7355"></i>体重 7 日均线</span></div>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <h3>今日推荐</h3>
+          <div class="chips" id="stScene" style="margin-left:auto"></div>
+        </div>
+        <div class="form-row" style="margin-top:10px">
+          <div class="field" style="flex:2 1 100%"><label>天气（两秒点完）</label>
+            <div class="chips" id="stWeather"></div>
+          </div>
+        </div>
+        <div id="stResult" style="margin-top:12px"></div>
       </div>
 
       <div class="card">
-        <h3>周计划 <span class="sub">点击文字即可编辑，失焦保存</span></h3>
-        <div id="planBox" style="margin-top:8px"></div>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <h3>衣橱</h3>
+          <div class="view-toggle" style="margin-left:auto"><button id="wdTabOwned" class="on">已购</button><button id="wdTabWant">想买</button></div>
+        </div>
+
+        <div id="wdAddBox" style="margin-top:12px;padding:12px;border:1px dashed var(--line2);border-radius:12px">
+          <div class="form-row">
+            <div class="field" style="flex:2"><label>名称</label><input type="text" id="wdName" placeholder="如：白色棉质衬衫" maxlength="30"></div>
+            <div class="field"><label>分类</label><select id="wdCategory"><option>上衣</option><option>下装</option><option>鞋履</option><option>配饰</option></select></div>
+            <div class="field"><label>颜色</label><input type="text" id="wdColor" placeholder="白 / 藏青 白" maxlength="16"></div>
+            <div class="field"><label>材质</label><input type="text" id="wdMaterial" placeholder="棉 / 羊毛" maxlength="12"></div>
+            <div class="field"><label>风格（空格分隔）</label><input type="text" id="wdStyle" placeholder="通勤 简约" maxlength="24"></div>
+            <div class="field"><label>季节</label><select id="wdSeason"><option>四季</option><option>春秋</option><option>夏</option><option>冬</option><option>春秋冬</option></select></div>
+          </div>
+          <div class="form-row" style="margin-top:10px">
+            <div class="field" style="flex:2"><label>商品链接（想买时填）</label><input type="text" id="wdUrl" placeholder="https://… 或搜索链接" maxlength="300"></div>
+            <div class="field" style="flex:0 0 auto;align-items:flex-start">
+              <label>实物照（可选）</label>
+              <button class="btn ghost" id="wdPhoto" style="white-space:nowrap">📷 上传图片</button>
+              <input type="file" id="wdPhotoFile" accept="image/*" style="display:none">
+            </div>
+            <div class="field"><label>状态</label><select id="wdOwned"><option value="true">已购</option><option value="false">想买</option></select></div>
+            <button class="btn" id="wdSave">加 入</button>
+          </div>
+          <div id="wdPhotoPrevWrap" style="display:none;margin-top:8px"><img id="wdPhotoPrev" class="log-thumb" alt="预览"></div>
+        </div>
+
+        <div class="chips" id="wdChips" style="margin-top:12px"></div>
+        <div id="wdBox" style="margin-top:12px"></div>
+      </div>
+
+      <div class="card">
+        <h3>推荐历史</h3>
+        <div id="stLogBox" style="margin-top:10px"></div>
       </div>
     </section>
 
@@ -875,6 +908,7 @@ code.k{background:#efece3;border-radius:5px;padding:1px 7px;font-size:12px;font-
 <div class="toast" id="toast"></div>
 <div class="lb-mask" id="ocLb"></div>
 <div class="lb-mask" id="mdLb"></div>
+
 <script>
 "use strict";
 /* ============================================================
@@ -931,6 +965,9 @@ const TABLES = {
   fitness:  { name:"身体记录",   csv:"健身-身体记录.csv",   sb:"lw_fitness"   },
   plan:     { name:"周计划",     csv:"健身-周计划.csv",     sb:"lw_plan"      },
   goal:     { name:"健身目标",   csv:"健身-目标.csv",       sb:"lw_goal"      },
+  bodyProfile: { name:"身体档案",  csv:"穿搭-身体档案.csv",  sb:"lw_body_profile" },
+  wardrobe:    { name:"衣橱单品",  csv:"穿搭-衣橱单品.csv",  sb:"lw_wardrobe"     },
+  outfitLog:   { name:"推荐记录",  csv:"穿搭-推荐记录.csv",  sb:"lw_outfit_log"   },
   schedule: { name:"日程表",     csv:"日程-日程表.csv",     sb:"lw_schedule"  },
   shopping: { name:"待买清单",   csv:"生活-待买清单.csv",   sb:"lw_shopping"  },
   media:    { name:"书影音收藏", csv:"书影音-收藏.csv",     sb:"lw_media"     },
@@ -942,7 +979,7 @@ const PAGE_TABLES = {
   overview: ["expense","budget","habit","habitLog","schedule","shopping","media","orchid"],
   money:    ["expense","budget"],
   habit:    ["habit","habitLog"],
-  fit:      ["fitness","plan","goal"],
+  fit:      ["fitness","plan","goal","bodyProfile","wardrobe","outfitLog"],
   sched:    ["schedule"],
   buy:      ["shopping"],
   media:    ["media"],
@@ -1404,6 +1441,7 @@ function renderMode(){
     : "推荐用 <b>Supabase 云同步</b>：数据存在你自己的数据库里，换设备、换浏览器打开同一网址，登录后数据都在。";
 }
 </script>
+
 <script>
 "use strict";
 /* ============================================================
@@ -1415,7 +1453,7 @@ const PAGES = [
   { id:"overview", zh:"今日概览", en:"OVERVIEW", ico:"今" },
   { id:"money",    zh:"记账理财", en:"MONEY",    ico:"账" },
   { id:"habit",    zh:"习惯健康", en:"HABIT",    ico:"习" },
-  { id:"fit",      zh:"减脂健身", en:"FIT",      ico:"身" },
+  { id:"fit",      zh:"穿搭指导", en:"STYLE",    ico:"衣" },
   { id:"sched",    zh:"日程统筹", en:"SCHEDULE", ico:"程" },
   { id:"buy",      zh:"待买清单", en:"WISH",     ico:"买" },
   { id:"media",    zh:"书影音",   en:"LIBRARY",  ico:"藏" },
@@ -1736,161 +1774,312 @@ const Habit = {
   }
 };
 </script>
+
 <script>
 "use strict";
 /* ============================================================
-   模块三：减脂健身
+   模块三：穿搭指导
+   —— 身体档案 / 衣橱（已购+想买）/ 天气场景推荐 / 推荐历史
+   架构：render* 之间互不调用，由各 Data.on 回调直接调度。
    ============================================================ */
-const Fit = {
+/* 身型自动推断：三围差值规则（手选优先） */
+function stShapeOf(p){
+  if (!p) return "";
+  const b = num(p.bust), w = num(p.waist), h = num(p.hip);
+  if (!(b > 0 && w > 0 && h > 0)) return "";
+  if (h - b >= 5) return "梨形";
+  if (b - h >= 5) return "倒三角";
+  if (w >= 80 && w >= b * 0.85) return "苹果形";
+  if (w <= b * 0.75 && Math.abs(b - h) < 5) return "沙漏";
+  return "H形";
+}
+/* 季节是否匹配当前体感 */
+function stSeasonFit(item, temp){
+  const s = (item.season || "四季").trim() || "四季";
+  if (s === "四季") return true;
+  if (temp === "热") return /夏/.test(s);
+  if (temp === "冷") return /冬/.test(s);
+  /* 舒适 / 微凉：春秋为主，冬装可叠穿，夏装单穿略凉 */
+  return /春|秋|冬/.test(s);
+}
+/* 身型 → 下装/上衣用色倾向 */
+const ST_SHAPE_TIPS = {
+  "梨形":   { bottom:"深色", top:"浅色/亮色", why:"下半身丰满，深色直筒下装修饰胯部，亮色上衣把视线往上提" },
+  "苹果形": { bottom:"直筒", top:"V领/垂感", why:"腰腹圆润，V领拉长颈部线条，直筒下装不卡腰" },
+  "沙漏":   { bottom:"合身", top:"收腰", why:"比例匀称，收腰款直接放大腰细优势" },
+  "H形":    { bottom:"阔腿/伞摆", top:"短款或塞衣角", why:"腰线不明显，制造腰线或强化肩部都可以出层次" },
+  "倒三角": { bottom:"浅色/蓬松", top:"简洁", why:"肩宽胯窄，下装加点量感平衡上下比例" }
+};
+const ST_NEUTRALS = ["黑","白","灰","米","驼","藏青","裸","杏"];
+function stIsNeutral(c){ return ST_NEUTRALS.some(n => (c || "").indexOf(n) >= 0); }
+
+const Style = {
+  tab: "owned",        /* owned / want */
+  filter: "",          /* 衣橱分类筛选 */
+  weather: "",         /* 如 "多云 · 微凉" */
+  scene: "通勤",
+  pendingImg: null,
+
   init(){
-    $("#ftDate").value = todayStr();
-    $("#ftSave").addEventListener("click", () => this.save());
-    $("#ftGoalV").addEventListener("click", () => this.editGoal());
-    Data.on("fitness", () => this.render());
-    Data.on("plan", () => this.renderPlan());
-    Data.on("goal", () => this.render());
-  },
-  async save(){
-    const w = num($("#ftW").value);
-    if (w == null || w <= 0){ toast("请填写体重"); return; }
-    const props = {
-      date: $("#ftDate").value || todayStr(),
-      weight: String(w),
-      bodyFat: $("#ftF").value || "",
-      intake: $("#ftIn").value || "",
-      outtake: $("#ftOut").value || "",
-      note: $("#ftNote").value.trim()
+    /* ---------- 身体档案 ---------- */
+    $("#bpSave").addEventListener("click", () => this.saveProfile());
+    Data.on("bodyProfile", () => this.fillProfile());
+
+    /* ---------- 天气 / 场景 ---------- */
+    $("#stScene").innerHTML = ["通勤","休闲","约会","出行"].map(s =>
+      '<button class="chip' + (s === this.scene ? " on" : "") + '" data-scene="' + s + '">' + s + '</button>').join("");
+    $$("#stScene .chip").forEach(b => b.addEventListener("click", () => {
+      this.scene = b.dataset.scene;
+      $$("#stScene .chip").forEach(x => x.classList.toggle("on", x === b));
+      this.renderSuggest();
+    }));
+    const renderWeather = () => {
+      const cond = ["晴","多云","阴","雨","雪"], temp = ["热","舒适","微凉","冷"];
+      $("#stWeather").innerHTML =
+        cond.map(c => '<button class="chip' + (this.weather.startsWith(c) ? " on" : "") + '" data-cond="' + c + '">' + c + '</button>').join("") + " " +
+        temp.map(t => '<button class="chip' + (this.weather.endsWith(t) ? " on" : "") + '" data-temp="' + t + '">' + t + '</button>').join("");
+      $$("#stWeather .chip").forEach(b => b.addEventListener("click", () => {
+        const w = this.weather.split(" · ");
+        const cond = b.dataset.cond || w[0] || "多云";
+        const temp = b.dataset.temp || w[1] || "舒适";
+        this.weather = cond + " · " + temp;
+        renderWeather(); this.renderSuggest();
+      }));
     };
+    renderWeather();
+    if (!this.weather) this.weather = "多云 · 舒适";
+
+    /* ---------- 衣橱 ---------- */
+    $("#wdTabOwned").addEventListener("click", () => this.setTab("owned"));
+    $("#wdTabWant").addEventListener("click", () => this.setTab("want"));
+    $("#wdSave").addEventListener("click", () => this.saveItem());
+    $("#wdPhoto").addEventListener("click", () => $("#wdPhotoFile").click());
+    $("#wdPhotoFile").addEventListener("change", async (e) => {
+      const f = e.target.files && e.target.files[0];
+      e.target.value = "";
+      if (!f) return;
+      if (!/^image\//.test(f.type)) { toast("请选择图片文件"); return; }
+      if (f.size > 20 * 1024 * 1024) { toast("图片太大（超过 20MB）"); return; }
+      try {
+        this.pendingImg = await OCCompress(f);
+        $("#wdPhotoPrev").src = this.pendingImg;
+        $("#wdPhotoPrevWrap").style.display = "";
+        toast("图片已就绪，随单品一起保存");
+      } catch(err){ toast("图片处理失败，换一张试试"); }
+    });
+    Data.on("wardrobe", () => this.renderWardrobe());
+    Data.on("outfitLog", () => this.renderLog());
+    Data.on("bodyProfile", () => this.renderSuggest());
+    Data.on("wardrobe", () => this.renderSuggest());
+  },
+
+  /* ============ 身体档案 ============ */
+  fillProfile(){
+    const rows = (Data.cache.bodyProfile && Data.cache.bodyProfile.rows) || [];
+    const p = rows[0] || {};
+    $("#bpHeight").value = p.height || ""; $("#bpWeight").value = p.weight || "";
+    $("#bpBust").value = p.bust || ""; $("#bpWaist").value = p.waist || ""; $("#bpHip").value = p.hip || "";
+    $("#bpShape").value = p.shapeType || "";
+    $("#bpCity").value = p.city || ""; $("#bpNote").value = p.note || "";
+    const guess = stShapeOf(p);
+    $("#bpHint").textContent = guess
+      ? ("按三围推断身型：" + guess + "（当前" + (p.shapeType ? "已手动选「" + p.shapeType + "」" : "未手选，保存时将自动采用") + "）")
+      : (p.updatedAt ? "档案更新于 " + p.updatedAt : "填好三围，身型会自动推断");
+  },
+  async saveProfile(){
+    const props = {
+      height: $("#bpHeight").value || "", weight: $("#bpWeight").value || "",
+      bust: $("#bpBust").value || "", waist: $("#bpWaist").value || "", hip: $("#bpHip").value || "",
+      shapeType: $("#bpShape").value || stShapeOf({
+        bust: $("#bpBust").value, waist: $("#bpWaist").value, hip: $("#bpHip").value }),
+      city: $("#bpCity").value.trim(), note: $("#bpNote").value.trim(),
+      updatedAt: todayStr()
+    };
+    const rows = (Data.cache.bodyProfile && Data.cache.bodyProfile.rows) || [];
     try {
-      await Data.add("fitness", props);
-      $("#ftW").value = ""; $("#ftF").value = ""; $("#ftIn").value = ""; $("#ftOut").value = ""; $("#ftNote").value = "";
-      toast("已记录");
+      if (rows[0]) await Data.update("bodyProfile", rows[0]._id, props);
+      else await Data.add("bodyProfile", props);
+      toast("档案已保存" + (props.shapeType ? " · 身型 " + props.shapeType : ""));
     } catch(e){ toast("保存失败：" + (e.message||e)); }
   },
-  async editGoal(){
-    const c = Data.cache.goal;
-    const cur = (c && c.rows || []).find(r => r.key === "targetWeight");
-    const v = prompt("目标体重（kg）：", cur ? cur.value : "");
-    if (v == null) return;
-    const n = num(v);
-    if (n == null || n <= 0){ toast("数字不合法"); return; }
-    try {
-      if (cur) await Data.update("goal", cur._id, { key: "targetWeight", value: String(n) });
-      else await Data.add("goal", { key: "targetWeight", value: String(n) });
-      toast("目标已更新");
-    } catch(e){ toast("保存失败：" + (e.message||e)); }
-  },
-  render(){
-    const c = Data.cache.fitness, g = Data.cache.goal;
-    if (c && c.error){ $("#ftChart").innerHTML = errCard(c.error, "fitness"); return; }
-    const rows = (c && c.rows || []).filter(r => num(r.weight) != null).slice()
-      .sort((a,b) => (a.date||"").localeCompare(b.date||""));
-    if (!rows.length){
-      $("#ftWeight").innerHTML = "— <small>kg</small>"; $("#ftMA").innerHTML = "— <small>kg</small>";
-      $("#ftBMI").textContent = "—"; $("#ftGoalPct").textContent = "—"; $("#ftDeficit").textContent = "—";
-      $("#ftChart").innerHTML = '<div class="empty"><div class="zh">虚 位 以 待</div>记一次体重，趋势图就会出现</div>';
+
+  /* ============ 推荐 ============ */
+  renderSuggest(){
+    const box = $("#stResult");
+    const p = ((Data.cache.bodyProfile && Data.cache.bodyProfile.rows) || [])[0] || null;
+    const shape = (p && p.shapeType) || "";
+    const wd = (Data.cache.wardrobe && Data.cache.wardrobe.rows) || [];
+    if (!wd.length){
+      box.innerHTML = '<div class="empty" style="padding:18px 0"><div class="zh">虚 位 以 待</div>先往衣橱里加几件已购单品，推荐马上就有了</div>';
       return;
     }
-    const last = rows[rows.length-1];
-    const last7 = rows.slice(-7);
-    const ma = last7.reduce((s,r) => s + num(r.weight), 0) / last7.length;
-    $("#ftWeight").innerHTML = fmt(num(last.weight)) + " <small>kg</small>";
-    $("#ftMA").innerHTML = fmt(ma) + " <small>kg</small>";
-    const goalRows = (g && g.rows || []);
-    const goal = goalRows.find(r => r.key === "targetWeight");
-    const hRow = goalRows.find(r => r.key === "height");
-    const height = (hRow && num(hRow.value)) || 1.62; /* 默认身高 1.62m，目标表加 key=height 即可调整 */
-    const bmi = num(last.weight) / height / height;
-    $("#ftBMI").textContent = fmt(bmi) + (bmi < 18.5 ? " 偏低" : (bmi < 24 ? " 正常" : (bmi < 28 ? " 偏高" : " 肥胖")));
-    const gv = goal ? num(goal.value) : null;
-    $("#ftGoalV").textContent = gv ? gv + " kg" : "未设置";
-    if (gv){
-      const start = num(rows[0].weight);
-      const cur = num(last.weight);
-      const pct = start > gv ? Math.max(0, Math.min(100, (start - cur) / (start - gv) * 100)) : 0;
-      $("#ftGoalPct").textContent = Math.round(pct) + "%";
-    } else $("#ftGoalPct").textContent = "—";
+    const [cond, temp] = this.weather.split(" · ");
+    const scene = this.scene;
+    const owned = wd.filter(r => r.owned === "true" || r.owned === true);
+    const bySeason = owned.filter(r => stSeasonFit(r, temp));
+    const inScene = bySeason.filter(r => !(r.styleTags || "").trim() || (r.styleTags || "").indexOf(scene) >= 0 || scene === "休闲");
+    const pick = cat => {
+      const pool = inScene.filter(r => r.category === cat);
+      return pool.length ? pool[Math.floor(pool.length / 2) % pool.length] : null; /* 稳定取中位，避免每次刷新换一套 */
+    };
+    const top = pick("上衣"), bottom = pick("下装"), shoe = pick("鞋履"), acc = pick("配饰");
+    const set = [top, bottom, shoe, acc].filter(Boolean);
+    if (!set.length){
+      box.innerHTML = '<div class="empty" style="padding:18px 0"><div class="zh">衣橱里还没有匹配的单品</div>换个场景试试，或把「风格」标签留空（留空=百搭）</div>';
+      return;
+    }
+    const shapeTip = ST_SHAPE_TIPS[shape] || { bottom:"", top:"", why:"身型档案还没填，填好三围推荐会更准" };
+    /* 未购推荐：优先补缺的分类，其次同场景想买 */
+    const want = wd.filter(r => r.owned !== "true" && r.owned !== true);
+    const missing = want.find(r => r.category && !set.some(s => s.category === r.category));
+    const picked = missing || (want.length ? want.find(r => stSeasonFit(r, temp)) : null);
 
-    /* 热量缺口：近 7 天有摄入和消耗的记录 */
-    const withBoth = (c.rows||[]).filter(r => num(r.intake) != null && num(r.outtake) != null && r.date >= addDays(todayStr(), -6));
-    $("#ftDeficit").textContent = withBoth.length
-      ? fmt(withBoth.reduce((s,r) => s + (num(r.outtake)-num(r.intake)), 0) / withBoth.length) + " kcal/日"
-      : "填了摄入和消耗才会计算";
+    const reasons = [];
+    if (shape) reasons.push(shape + "身型：" + shapeTip.why);
+    if (cond === "雨") reasons.push("雨天优先防滑鞋底，浅色裤子容易溅泥");
+    if (temp === "热") reasons.push("高温天选透气材质，短袖/阔腿保持通风");
+    if (temp === "冷") reasons.push("低温天叠穿，内薄外厚更好调节");
+    if (top && bottom && stIsNeutral(bottom.color) && !stIsNeutral(top.color)) reasons.push("中性色下装打底，" + esc(top.color) + "色上衣做亮点，繁简平衡");
+    const tips = [];
+    if (shape === "H形" && top) tips.push(top.name + " 下摆塞进裤腰，腰线立起来");
+    if (shape === "梨形" && bottom) tips.push("包/鞋与下装同色系，视线连贯更显高");
+    if (shoe) tips.push("鞋和配饰控制在两个颜色以内，整体不散");
 
-    this.chart(rows);
+    box.innerHTML =
+      '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:stretch">' +
+      set.map(s =>
+        '<div style="flex:1 1 120px;border:1px solid var(--line2);border-radius:12px;padding:10px;text-align:center">' +
+        (s.image ? '<img src="' + esc(s.image) + '" style="width:100%;max-height:110px;object-fit:cover;border-radius:8px" alt="">' : "") +
+        '<div style="font-size:13px;font-weight:600;margin-top:6px">' + esc(s.name || "未命名") + '</div>' +
+        '<div style="font-size:11px;color:var(--soft);margin-top:2px">' + esc(s.category || "") + " · " + esc(s.color || "—") + '</div></div>').join("") +
+      (picked ?
+        '<div style="flex:1 1 120px;border:1px dashed #c9a227;border-radius:12px;padding:10px;text-align:center;background:#faf6ea">' +
+        (picked.image ? '<img src="' + esc(picked.image) + '" style="width:100%;max-height:110px;object-fit:cover;border-radius:8px" alt="">' : "") +
+        '<div style="font-size:13px;font-weight:600;margin-top:6px">想买 · ' + esc(picked.name || "未命名") + '</div>' +
+        '<div style="font-size:11px;color:var(--soft);margin-top:2px">被推荐 ' + (num(picked.buyCount) || 0) + ' 次</div>' +
+        (picked.productUrl ? '<a href="' + esc(picked.productUrl) + '" target="_blank" rel="noopener" style="font-size:12px;color:var(--clay);display:inline-block;margin-top:4px">去看商品 ↗</a>' : "") +
+        '</div>' : "") +
+      '</div>' +
+      '<div style="font-size:13px;line-height:1.8;margin-top:10px;color:#4a443a"><b>为什么这样搭：</b>' + (reasons.length ? reasons.join("；") : "按「" + esc(scene) + " · " + esc(this.weather) + "」从已购里挑的") + '。</div>' +
+      (tips.length ? '<div style="font-size:12.5px;line-height:1.8;margin-top:4px;color:var(--soft)"><b>小提示：</b>' + tips.join("；") + '。</div>' : "") +
+      '<button class="btn" id="stSave" style="margin-top:12px">存入推荐历史</button>';
+
+    $("#stSave").addEventListener("click", () => this.saveSuggest(set, picked, reasons, tips, cond, temp));
   },
-  chart(rows){
-    const W = 680, H = 210, PL = 40, PR = 14, PT = 14, PB = 24;
-    const data = rows.slice(-45);
-    const hasF = data.some(r => num(r.bodyFat) != null);
-    const ws = data.map(r => num(r.weight));
-    let lo = Math.min(...ws), hi = Math.max(...ws);
-    if (hasF){ /* 体脂单独右轴 */ }
-    const padV = Math.max(0.4, (hi - lo) * 0.15);
-    lo -= padV; hi += padV;
-    const X = i => PL + (W - PL - PR) * (data.length === 1 ? 0.5 : i / (data.length - 1));
-    const Y = v => PT + (H - PT - PB) * (1 - (v - lo) / (hi - lo));
-    let svg = '<svg viewBox="0 0 ' + W + " " + H + '" style="width:100%;height:auto">';
-    /* 网格 */
-    for (let g = 0; g <= 3; g++){
-      const y = PT + (H - PT - PB) * g / 3;
-      svg += '<line x1="' + PL + '" y1="' + y + '" x2="' + (W-PR) + '" y2="' + y + '" stroke="#e7e2d8" stroke-width="1"/>';
-      svg += '<text x="' + (PL-6) + '" y="' + (y+4) + '" text-anchor="end" font-size="10" fill="#8a857c">' + fmt(hi - (hi-lo)*g/3) + '</text>';
-    }
-    /* 体脂（若有，右轴虚线） */
-    if (hasF){
-      const fs = data.map(r => num(r.bodyFat)).filter(v => v != null);
-      const flo = Math.min(...fs), fhi = Math.max(...fs);
-      const fpad = Math.max(0.5, (fhi-flo)*0.15);
-      const FY = v => PT + (H-PT-PB) * (1 - (v - (flo-fpad)) / ((fhi+fpad) - (flo-fpad)));
-      let path = "";
-      data.forEach((r, i) => { const f = num(r.bodyFat); if (f != null) path += (path ? " L" : "M") + X(i).toFixed(1) + " " + FY(f).toFixed(1); });
-      svg += '<path d="' + path + '" fill="none" stroke="#5b7d8f" stroke-width="1.5" stroke-dasharray="4 4" opacity=".8"/>';
-    }
-    /* 体重均线 */
-    if (data.length >= 4){
-      let mp = "";
-      for (let i = 0; i < data.length; i++){
-        const s = Math.max(0, i - 3), e = i;
-        const seg = data.slice(s, e + 1);
-        const m = seg.reduce((a, r) => a + num(r.weight), 0) / seg.length;
-        mp += (mp ? " L" : "M") + X(i).toFixed(1) + " " + Y(m).toFixed(1);
+  async saveSuggest(set, picked, reasons, tips, cond, temp){
+    const props = {
+      date: todayStr(),
+      weather: cond + " " + temp,
+      ownedIds: set.map(s => s._id).join(","),
+      pickedId: picked ? picked._id : "",
+      reason: reasons.join("；") || "按场景与天气从已购里挑选",
+      tips: tips.join("；"),
+      snapshot: set.map(s => s.name || s.category).join(" / ") + (picked ? " → 想买 " + (picked.name || "") : ""),
+      scene: this.scene
+    };
+    try {
+      await Data.add("outfitLog", props);
+      if (picked){
+        try { await Data.update("wardrobe", picked._id, {
+          name: picked.name || "", image: picked.image || "", productUrl: picked.productUrl || "",
+          category: picked.category || "", color: picked.color || "", material: picked.material || "",
+          owned: "false", buyCount: String((num(picked.buyCount) || 0) + 1),
+          styleTags: picked.styleTags || "", season: picked.season || "四季", note: picked.note || ""
+        }); } catch(e){}
       }
-      svg += '<path d="' + mp + '" fill="none" stroke="#5f7355" stroke-width="2.5" stroke-linecap="round" opacity=".9"/>';
-    }
-    /* 体重折线 + 点 */
-    let path = "";
-    data.forEach((r, i) => { path += (path ? " L" : "M") + X(i).toFixed(1) + " " + Y(num(r.weight)).toFixed(1); });
-    svg += '<path d="' + path + '" fill="none" stroke="#b96a4b" stroke-width="2"/>';
-    data.forEach((r, i) => {
-      svg += '<circle cx="' + X(i).toFixed(1) + '" cy="' + Y(num(r.weight)).toFixed(1) + '" r="3" fill="#fffdf9" stroke="#b96a4b" stroke-width="1.6"><title>' + r.date + " · " + fmt(num(r.weight)) + 'kg</title></circle>';
-    });
-    /* 首末日期 */
-    svg += '<text x="' + PL + '" y="' + (H-6) + '" font-size="10" fill="#8a857c">' + data[0].date.slice(5) + '</text>';
-    svg += '<text x="' + (W-PR) + '" y="' + (H-6) + '" text-anchor="end" font-size="10" fill="#8a857c">' + data[data.length-1].date.slice(5) + '</text>';
-    svg += '</svg>';
-    $("#ftChart").innerHTML = svg;
+      toast("已存入推荐历史");
+    } catch(e){ toast("保存失败：" + (e.message||e)); }
   },
-  renderPlan(){
-    const c = Data.cache.plan;
-    if (c && c.error){ $("#planBox").innerHTML = errCard(c.error, "plan"); return; }
-    const days = ["一","二","三","四","五","六","日"];
-    const map = {};
-    (c && c.rows || []).forEach(r => { if (r.day) map[r.day] = r; });
-    $("#planBox").innerHTML = days.map(d => {
-      const row = map[d];
-      const content = row ? (row.content || "") : "";
-      return '<div class="plan-row" data-day="' + d + '" data-rid="' + (row ? row._id : "") + '">' +
-        '<span class="d">周' + d + '</span><input type="text" value="' + esc(content) + '" placeholder="— 休息或安排 —" maxlength="50"></div>';
-    }).join("");
-    $$("#planBox .plan-row input").forEach(inp => inp.addEventListener("change", async () => {
-      const pr = inp.closest(".plan-row");
-      const day = pr.dataset.day, rid = pr.dataset.rid, v = inp.value.trim();
-      try {
-        if (rid) await Data.update("plan", rid, { day, content: v });
-        else if (v) await Data.add("plan", { day, content: v });
-        toast("周" + day + "已保存");
-      } catch(e){ toast("保存失败：" + (e.message||e)); }
+
+  /* ============ 衣橱 ============ */
+  setTab(t){
+    this.tab = t;
+    $("#wdTabOwned").classList.toggle("on", t === "owned");
+    $("#wdTabWant").classList.toggle("on", t === "want");
+    this.renderWardrobe();
+  },
+  async saveItem(){
+    const name = $("#wdName").value.trim();
+    if (!name){ toast("给单品起个名字"); return; }
+    const props = {
+      name,
+      image: this.pendingImg || "",
+      productUrl: $("#wdUrl").value.trim(),
+      category: $("#wdCategory").value,
+      color: $("#wdColor").value.trim(),
+      material: $("#wdMaterial").value.trim(),
+      owned: $("#wdOwned").value,
+      buyCount: "0",
+      styleTags: $("#wdStyle").value.trim(),
+      season: $("#wdSeason").value,
+      note: ""
+    };
+    try {
+      await Data.add("wardrobe", props);
+      $("#wdName").value = ""; $("#wdUrl").value = ""; $("#wdColor").value = "";
+      $("#wdMaterial").value = ""; $("#wdStyle").value = "";
+      $("#wdPhotoPrevWrap").style.display = "none"; this.pendingImg = null;
+      toast(props.owned === "true" ? "已加入衣橱" : "已加入想买清单");
+    } catch(e){ toast("保存失败：" + (e.message||e)); }
+  },
+  renderWardrobe(){
+    const c = Data.cache.wardrobe;
+    if (c && c.error){ $("#wdBox").innerHTML = errCard(c.error, "wardrobe"); return; }
+    const rows = (c && c.rows || []);
+    const cats = ["", "全部"].concat([...new Set(rows.map(r => r.category).filter(Boolean))].map(x => [x, x]));
+    $("#wdChips").innerHTML = cats.map(d =>
+      '<button class="chip' + (this.filter === d[0] ? " on" : "") + '" data-wf="' + esc(d[0]) + '">' + esc(d[1]) + '</button>').join("");
+    $$("#wdChips .chip").forEach(ch => ch.addEventListener("click", () => { this.filter = ch.dataset.wf; this.renderWardrobe(); }));
+
+    const isOwned = r => r.owned === "true" || r.owned === true;
+    let shown = rows.filter(r => isOwned(r) === (this.tab === "owned"));
+    if (this.filter) shown = shown.filter(r => r.category === this.filter);
+    if (!shown.length){
+      $("#wdBox").innerHTML = '<div class="empty"><div class="zh">虚 位 以 待</div>' +
+        (this.tab === "owned" ? "衣柜空着呢，加一件已购单品" : "想买清单空着，逛街看到好的记下来") + '</div>';
+      return;
+    }
+    $("#wdBox").innerHTML = '<div class="wall" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">' +
+      shown.map(r =>
+        '<div style="border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:#fff">' +
+        (r.image ? '<img src="' + esc(r.image) + '" style="width:100%;height:120px;object-fit:cover;display:block" alt="">' :
+          '<div style="width:100%;height:120px;display:flex;align-items:center;justify-content:center;background:#f2efe6;color:#b0a99a;font-size:12px">' +
+          (isOwned(r) ? "已购 · 无图" : "想买 · 无图") + '</div>') +
+        '<div style="padding:8px 10px">' +
+        '<div style="font-size:13px;font-weight:600">' + esc(r.name || "未命名") + '</div>' +
+        '<div style="font-size:11px;color:var(--soft);margin-top:2px">' + esc(r.category || "") + " · " + esc(r.color || "—") + " · " + esc(r.material || "—") + '</div>' +
+        (r.styleTags ? '<div style="font-size:11px;color:var(--soft);margin-top:2px">#' + esc(r.styleTags.trim().split(/\s+/).join(" #")) + '</div>' : "") +
+        (!isOwned(r) ? '<div style="font-size:11px;color:#9a6b2f;margin-top:3px">被推荐 ' + (num(r.buyCount) || 0) + ' 次' +
+          (r.productUrl ? ' · <a href="' + esc(r.productUrl) + '" target="_blank" rel="noopener" style="color:var(--clay)">看商品 ↗</a>' : "") + '</div>' : "") +
+        '<button class="icon-btn" data-wd-del="' + r._id + '" style="margin-top:6px">✕ 移除</button>' +
+        '</div></div>').join("") + '</div>';
+    $$("#wdBox [data-wd-del]").forEach(b => b.addEventListener("click", async () => {
+      if (!confirm("从衣橱移除这件单品？")) return;
+      try { await Data.remove("wardrobe", b.dataset.wdDel); toast("已移除"); }
+      catch(e){ toast("删除失败：" + (e.message||e)); }
+    }));
+  },
+
+  /* ============ 推荐历史 ============ */
+  renderLog(){
+    const c = Data.cache.outfitLog;
+    if (c && c.error){ $("#stLogBox").innerHTML = errCard(c.error, "outfitLog"); return; }
+    const rows = (c && c.rows || []).slice().sort((a,b) => (b.date||"").localeCompare(a.date||"")).slice(0, 20);
+    if (!rows.length){
+      $("#stLogBox").innerHTML = '<div class="empty"><div class="zh">还 没 有</div>点上面的「存入推荐历史」留下第一套</div>';
+      return;
+    }
+    $("#stLogBox").innerHTML = rows.map(r =>
+      '<div class="media-list-row"><span class="tag" style="background:#efece3;color:#6b6558">' + esc(r.date || "") + " · " + esc(r.scene || "") + '</span>' +
+      '<div class="bd"><b>' + esc(r.snapshot || "（单品已被删除）") + '</b>' +
+      '<span style="font-size:11.5px;color:var(--soft);margin-left:8px">' + esc(r.weather || "") + '</span>' +
+      (r.reason ? '<div class="cm">' + esc(r.reason.length > 70 ? r.reason.slice(0,70) + "…" : r.reason) + '</div>' : '') +
+      (r.tips ? '<div class="cm" style="color:#9a8c6a">💡 ' + esc(r.tips) + '</div>' : '') + '</div>' +
+      '<span class="ops" style="display:flex"><button class="icon-btn" data-stl-del="' + r._id + '">✕</button></span></div>').join("");
+    $$("#stLogBox [data-stl-del]").forEach(b => b.addEventListener("click", async () => {
+      if (!confirm("删除这条推荐记录？")) return;
+      try { await Data.remove("outfitLog", b.dataset.stlDel); toast("已删除"); }
+      catch(e){ toast("删除失败：" + (e.message||e)); }
     }));
   }
 };
@@ -2290,6 +2479,7 @@ const Buy = {
   }
 };
 </script>
+
 <script>
 "use strict";
 /* ============================================================
@@ -3067,7 +3257,7 @@ function setupCloudSync(){
 (async function boot(){
   /* 先把界面骨架立起来 —— 不等数据，任何环境都不白屏 */
   buildNav(); gotoPage("overview");
-  Overview.init(); Money.init(); Habit.init(); Fit.init();
+  Overview.init(); Money.init(); Habit.init(); Style.init();
   Sched.init(); Buy.init(); Media.init(); Orchid.init();
   BindUI.init(); Backup.init();
   Overview.render();
