@@ -616,7 +616,7 @@ code.k{background:#efece3;border-radius:5px;padding:1px 7px;font-size:12px;font-
 
       <div class="card">
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <h3>今日推荐</h3>
+          <h3>今日推荐 <span class="sub">推荐结果就在这张卡的下方</span></h3>
           <div class="chips" id="stScene" style="margin-left:auto"></div>
         </div>
         <div class="form-row" style="margin-top:10px">
@@ -629,7 +629,7 @@ code.k{background:#efece3;border-radius:5px;padding:1px 7px;font-size:12px;font-
 
       <div class="card">
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <h3>衣橱</h3>
+          <h3>衣橱 <span class="sub">只有标记为「已购」的单品才会进入搭配</span></h3>
           <div class="view-toggle" style="margin-left:auto"><button id="wdTabOwned" class="on">已购</button><button id="wdTabWant">想买</button></div>
         </div>
 
@@ -1345,6 +1345,32 @@ const Data = {
     this.emit(key);
   },
 
+  /* ---------- 本机 → 云端 迁移（登录后调用） ----------
+     只挑「本机有、云端为空」的表：既不会漏数据，也不会造成重复上传 */
+  localPending(){
+    const out = [];
+    Object.keys(TABLES).forEach(k => {
+      const local = this._localRead(k);
+      if (!local.length) return;
+      const cloud = (this.cache[k] && this.cache[k].rows) || [];
+      if (cloud.length) return;              /* 云端已有数据 → 跳过，避免重复 */
+      out.push({ key: k, name: TABLES[k].name, n: local.length });
+    });
+    return out;
+  },
+  async pushLocal(keys){
+    let n = 0;
+    for (const k of (keys || [])){
+      for (const row of this._localRead(k)){
+        const props = Object.assign({}, row); delete props._id;
+        await this.add(k, props);
+        n++;
+      }
+      try { localStorage.removeItem("lw.t." + k); } catch(e){}
+    }
+    return n;
+  },
+
   /* ---------- 双向同步（轮询 + 窗口聚焦） ---------- */
   startPolling(){
     this.stopPolling();
@@ -1813,16 +1839,51 @@ const ST_SHAPE_TIPS = {
 const ST_NEUTRALS = ["黑","白","灰","米","驼","藏青","裸","杏"];
 function stIsNeutral(c){ return ST_NEUTRALS.some(n => (c || "").indexOf(n) >= 0); }
 
+/* ---------- 穿搭模块：本机草稿 + 错误人话化 ----------
+   铁律：用户敲进去的内容绝不允许「凭空消失」。
+   ① 每改一个字段就存一份本机草稿；
+   ② 保存失败时保留草稿，并把原始报错翻译成能看懂的一句话；
+   ③ 打开页面若云端/本机都没有档案，自动回填草稿。 */
+const BP_DRAFT = "lw.draft.bodyProfile";
+function stDraftSave(props){ try { localStorage.setItem(BP_DRAFT, JSON.stringify(props)); } catch(e){} }
+function stDraftRead(){ try { return JSON.parse(localStorage.getItem(BP_DRAFT) || "null"); } catch(e){ return null; } }
+function stDraftClear(){ try { localStorage.removeItem(BP_DRAFT); } catch(e){} }
+
+/* 把 Supabase / 网络报错翻译成「人话 + 下一步怎么做」 */
+function stErrText(e){
+  const m = (e && e.message) ? e.message : String(e);
+  if (/登录已过期|尚未登录|invalid claim|JWT expired|401/i.test(m))
+    return "登录状态已失效 —— 点顶部状态条重新登录，再点一次保存";
+  if (/PGRST204|42703|Could not find the '.*' column/i.test(m))
+    return "云端表缺少这个字段 —— 去 Supabase 跑一遍 schema.sql 补列";
+  if (/42P01|PGRST205|does not exist|relation/i.test(m))
+    return "云端还没建表 —— 去 Supabase 的 SQL Editor 跑一遍 schema.sql";
+  if (/row-level security|permission denied|42501|403/i.test(m))
+    return "云端拒绝了这次写入 —— 确认已登录、且表已经建好";
+  if (/Failed to fetch|NetworkError|load failed|timeout|network/i.test(m))
+    return "网络连不上云端 —— 检查网络后重试";
+  return m;
+}
+
 const Style = {
   tab: "owned",        /* owned / want */
   filter: "",          /* 衣橱分类筛选 */
   weather: "",         /* 如 "多云 · 微凉" */
   scene: "通勤",
   pendingImg: null,
+  bpBaseline: null,    /* 上次由程序写入表单的内容指纹，用来判断用户有没有手改 */
 
   init(){
     /* ---------- 身体档案 ---------- */
     $("#bpSave").addEventListener("click", () => this.saveProfile());
+    /* 每改一个字段就落一份本机草稿：任何情况下输入都不会丢 */
+    ["bpHeight","bpWeight","bpBust","bpWaist","bpHip","bpShape","bpCity","bpNote"].forEach(id => {
+      const el = $("#" + id);
+      if (!el) return;
+      const mark = () => stDraftSave(this.readForm());
+      el.addEventListener("input", mark);
+      el.addEventListener("change", mark);
+    });
     Data.on("bodyProfile", () => this.fillProfile());
 
     /* ---------- 天气 / 场景 ---------- */
@@ -1874,20 +1935,8 @@ const Style = {
   },
 
   /* ============ 身体档案 ============ */
-  fillProfile(){
-    const rows = (Data.cache.bodyProfile && Data.cache.bodyProfile.rows) || [];
-    const p = rows[0] || {};
-    $("#bpHeight").value = p.height || ""; $("#bpWeight").value = p.weight || "";
-    $("#bpBust").value = p.bust || ""; $("#bpWaist").value = p.waist || ""; $("#bpHip").value = p.hip || "";
-    $("#bpShape").value = p.shapeType || "";
-    $("#bpCity").value = p.city || ""; $("#bpNote").value = p.note || "";
-    const guess = stShapeOf(p);
-    $("#bpHint").textContent = guess
-      ? ("按三围推断身型：" + guess + "（当前" + (p.shapeType ? "已手动选「" + p.shapeType + "」" : "未手选，保存时将自动采用") + "）")
-      : (p.updatedAt ? "档案更新于 " + p.updatedAt : "填好三围，身型会自动推断");
-  },
-  async saveProfile(){
-    const props = {
+  readForm(){
+    return {
       height: $("#bpHeight").value || "", weight: $("#bpWeight").value || "",
       bust: $("#bpBust").value || "", waist: $("#bpWaist").value || "", hip: $("#bpHip").value || "",
       shapeType: $("#bpShape").value || stShapeOf({
@@ -1895,12 +1944,73 @@ const Style = {
       city: $("#bpCity").value.trim(), note: $("#bpNote").value.trim(),
       updatedAt: todayStr()
     };
+  },
+  /* 把状态写在一个常驻的位置，而不是 2.4 秒就消失的 toast */
+  setHint(text, kind){
+    const el = $("#bpHint");
+    if (!el) return;
+    el.textContent = text;
+    el.style.color = kind === "err" ? "#b4341f" : (kind === "warn" ? "#9a6b2f" : (kind === "ok" ? "#4a6b3f" : "var(--soft)"));
+    el.style.fontWeight = (kind === "err" || kind === "warn") ? "600" : "";
+  },
+  /* 表单内容指纹：用来判断「表单里是程序填的，还是用户手改过的」 */
+  formSig(){
+    return ["bpHeight","bpWeight","bpBust","bpWaist","bpHip","bpShape","bpCity","bpNote"]
+      .map(id => { const el = $("#" + id); return el ? (el.value || "") : ""; }).join("|");
+  },
+  fillProfile(){
+    const rows = (Data.cache.bodyProfile && Data.cache.bodyProfile.rows) || [];
+    const p = rows[0] || {};
+    const draft = stDraftRead();
+    /* 云端/本机都没有档案，但本机留着一份草稿 → 自动回填，绝不让输入凭空消失 */
+    const useDraft = !rows.length && draft;
+    /* 表单里有用户手改、还没保存的内容 → 不回填，避免把正在输入的值冲掉
+       （这正是「录完就消失」的元凶：后台刷新拿空缓存把表单覆盖了）
+       表单全空时不设防：没有可丢的内容，放心用档案/草稿回填 */
+    const sigNow = this.formSig();
+    const dirty = this.bpBaseline != null && sigNow !== this.bpBaseline;
+    const empty = !sigNow.replace(/\|/g, "");
+    if (dirty && !empty) return;
+    const src = useDraft ? draft : p;
+    $("#bpHeight").value = src.height || ""; $("#bpWeight").value = src.weight || "";
+    $("#bpBust").value = src.bust || ""; $("#bpWaist").value = src.waist || ""; $("#bpHip").value = src.hip || "";
+    $("#bpShape").value = src.shapeType || "";
+    $("#bpCity").value = src.city || ""; $("#bpNote").value = src.note || "";
+    this.bpBaseline = this.formSig();
+    const guess = stShapeOf(src);
+    if (useDraft){
+      this.setHint("⚠ 已恢复上次没能保存成功的内容（云端还没有这条档案）。核对无误后点「保存」。", "warn");
+      return;
+    }
+    if (rows.length){
+      this.setHint("✓ 档案已保存" + (guess ? " · 身型 " + guess : "") + "（改完记得再点一次「保存」）", "ok");
+      return;
+    }
+    this.setHint("填好三围，身型会自动推断", "");
+  },
+  async saveProfile(){
+    const props = this.readForm();
+    /* 先落本机草稿：后面的写入无论成功失败，输入都不会丢 */
+    stDraftSave(props);
+    if (!props.height && !props.weight && !props.bust){
+      this.setHint("身高 / 体重 / 三围至少填一项再保存", "warn");
+      toast("还没填内容");
+      return;
+    }
     const rows = (Data.cache.bodyProfile && Data.cache.bodyProfile.rows) || [];
     try {
       if (rows[0]) await Data.update("bodyProfile", rows[0]._id, props);
       else await Data.add("bodyProfile", props);
+      stDraftClear();
+      this.bpBaseline = this.formSig();
+      const where = Data.online() ? "已同步到云端" : "只存在这台设备（未登录，登录后才会同步）";
+      this.setHint("✓ 档案已保存" + (props.shapeType ? " · 身型 " + props.shapeType : "") + " · " + where,
+        Data.online() ? "ok" : "warn");
       toast("档案已保存" + (props.shapeType ? " · 身型 " + props.shapeType : ""));
-    } catch(e){ toast("保存失败：" + (e.message||e)); }
+    } catch(e){
+      this.setHint("✗ 保存失败：" + stErrText(e) + "（内容已暂存在本机，刷新页面会自动恢复）", "err");
+      toast("保存失败，内容已暂存本机");
+    }
   },
 
   /* ============ 推荐 ============ */
@@ -1910,7 +2020,11 @@ const Style = {
     const shape = (p && p.shapeType) || "";
     const wd = (Data.cache.wardrobe && Data.cache.wardrobe.rows) || [];
     if (!wd.length){
-      box.innerHTML = '<div class="empty" style="padding:18px 0"><div class="zh">虚 位 以 待</div>先往衣橱里加几件已购单品，推荐马上就有了</div>';
+      box.innerHTML = '<div class="empty" style="padding:14px 4px;text-align:left">' +
+        '<div class="zh">推荐会出现在这里</div>' +
+        '<div style="line-height:2;margin-top:4px">' +
+        '还差一步：先到下面<b>「衣橱」</b>加几件<b>已购</b>单品——<b>上衣 / 下装 / 鞋履</b>各一件就够（配饰可选）。<br>' +
+        '加完回到这张卡，点一下天气（晴 / 雨 × 热 / 冷）和场景，上面立刻出一整套：单品卡片 + <b>为什么这样搭</b> + 搭配小提示。</div></div>';
       return;
     }
     const [cond, temp] = this.weather.split(" · ");
@@ -3032,6 +3146,28 @@ const BindUI = {
     Data.lastSync = new Date();
     renderMode();
     this.renderSbState();
+    await this.offerLocalMigration();
+  },
+
+  /* 切到云端后，之前「未登录时」录入的本机数据会从界面上消失——主动提示一键上传，
+     避免用户误以为数据丢了（这是「录完就消失」最容易被吓到的一种） */
+  async offerLocalMigration(){
+    const pend = Data.localPending();
+    if (!pend.length) return;
+    const total = pend.reduce((s, x) => s + x.n, 0);
+    const names = pend.map(x => x.name + " " + x.n + " 条").join("、");
+    if (!confirm("检测到这台设备上还有 " + total + " 条尚未上传的记录：\n\n" + names +
+      "\n\n云端目前是空的。要现在把它们上传到云端吗？\n（上传后本机副本会清理，换设备登录也能看到）")){
+      this.sbDiag("已保留本机数据（未上传）。切换回「本地模式」仍能看到它们，之后重新登录会再次提示上传。");
+      return;
+    }
+    try {
+      const n = await Data.pushLocal(pend.map(x => x.key));
+      this.sbDiag("✓ 已把 " + n + " 条本机记录上传到云端。");
+      toast("本机数据已上传 " + n + " 条");
+    } catch(e){
+      this.sbDiag("✗ 上传未完成：" + stErrText(e) + "\n本机副本已保留，不会丢。修好问题后重新登录即可再试。");
+    }
   },
 
   async sbLogin(){
