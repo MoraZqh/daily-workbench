@@ -360,6 +360,28 @@ h1.pt{font-family:var(--serif);font-size:28px;font-weight:600;letter-spacing:1px
 .md-dcard .note{white-space:pre-wrap;word-break:break-word;font-size:13.5px;line-height:1.8;color:#4a443a;background:#f2efe6;border-radius:10px;padding:12px 14px;margin-top:10px}
 .md-dcard .ops{display:flex;gap:10px;margin-top:16px;justify-content:flex-end}
 .cover.has-img{cursor:zoom-in}
+/* 穿搭 · 今日推荐卡：日期天气头 + 已购真图 + 未购文字卡 + 红色角标 */
+.st-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-bottom:10px;border-bottom:1px dashed var(--line);margin-bottom:12px}
+.st-date{font-family:var(--serif);font-size:15px;font-weight:600;letter-spacing:.5px}
+.st-tag{font-size:11.5px;padding:2px 10px;border-radius:99px;background:#efece3;color:#6b6558}
+.st-tag.wx{background:#e3ecf0;color:var(--sky)}
+.st-set{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.st-item{border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:#fff}
+.st-item img{width:100%;height:118px;object-fit:cover;display:block;background:#f2efe6}
+.st-item .noim{width:100%;height:118px;display:flex;align-items:center;justify-content:center;background:#f2efe6;color:#b0a99a;font-size:12px;letter-spacing:1px}
+.st-item .tx{padding:8px 10px;text-align:center}
+.st-item .nm{font-size:13px;font-weight:600}
+.st-item .mt{font-size:11px;color:var(--soft);margin-top:2px}
+.st-pick{position:relative;margin-top:14px;border:1px dashed #c9a227;border-radius:12px;background:#faf6ea;padding:12px 14px}
+.st-pick .hd{font-size:11.5px;color:#9a6b2f;font-weight:600;letter-spacing:.5px}
+.st-pick .nm{font-size:14.5px;font-weight:600;margin-top:3px}
+.st-pick .mt{font-size:12px;color:#6b6558;margin-top:3px;line-height:1.7}
+.st-pick .go{margin-top:10px}
+.st-cnt{font-size:11px;color:#9a6b2f;margin-top:5px}
+.st-badge{position:absolute;top:-11px;right:12px;background:#c0392b;color:#fff;font-size:11px;font-weight:600;padding:3px 10px;border-radius:99px;box-shadow:0 2px 8px rgba(192,57,43,.28)}
+.st-why{font-size:13px;line-height:1.8;margin-top:12px;color:#4a443a}
+.st-tips{font-size:12.5px;line-height:1.8;margin-top:5px;color:var(--soft)}
+.st-pick .go a{text-decoration:none;display:inline-block}
 .cover .img-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .cover .img-shade{position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(20,16,8,.72))}
 .lb-mask{position:fixed;inset:0;background:rgba(22,20,16,.9);z-index:130;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:24px;cursor:zoom-out;-webkit-tap-highlight-color:transparent}
@@ -592,11 +614,59 @@ code.k{background:#efece3;border-radius:5px;padding:1px 7px;font-size:12px;font-
       </div>
     </section>
 
+    <!-- ================= 日程统筹 ================= -->
+    <section class="page" id="page-sched">
+      <div class="kicker">04 · SCHEDULE</div>
+      <h1 class="pt">日程统筹</h1>
+      <p class="page-desc">要事在前，做完划掉。过期未完成的会标红提醒。</p>
+
+      <div class="card">
+        <h3>新日程 <span class="sub">要占一段时间的（旅行 / 回家 / 出差），把「结束日期」也填上</span></h3>
+        <div class="form-row" style="margin-top:12px">
+          <div class="field"><label>开始日期</label><input type="date" id="scDate"></div>
+          <div class="field"><label>结束日期<span style="color:var(--line2)"> · 可留空</span></label><input type="date" id="scEnd"></div>
+          <div class="field"><label>时间</label><input type="time" id="scTime"></div>
+          <div class="field" style="flex:2;min-width:180px"><label>事项</label><input type="text" id="scTitle" placeholder="如：回深圳陪奶奶过生日" maxlength="50"></div>
+          <div class="field"><label>地点</label><input type="text" id="scPlace" placeholder="可选" maxlength="20"></div>
+          <button class="btn" id="scSave">加 入</button>
+        </div>
+        <div class="sc-preview" id="scPreview"></div>
+      </div>
+
+      <div class="card">
+        <div class="cal-bar">
+          <h3>日程表</h3>
+          <div class="seg" id="scSeg">
+            <button data-view="cal" class="on">月历</button>
+            <button data-view="list">列表</button>
+          </div>
+          <label style="font-size:12px;color:var(--soft);display:flex;gap:6px;align-items:center;cursor:pointer;margin-left:auto"><input type="checkbox" id="scHideDone"> 隐藏已完成</label>
+        </div>
+
+        <div id="scCalWrap">
+          <div class="cal-bar" style="margin-top:14px">
+            <span class="month-nav" style="gap:10px"><span id="scLabel" style="font-family:var(--serif);font-size:19px">—</span></span>
+            <span class="cal-nav"><button id="scPrev">‹</button><button id="scToday">今天</button><button id="scNext">›</button></span>
+          </div>
+          <div class="cal-grid" id="scGrid"></div>
+          <div class="cal-legend">
+            <span><i style="background:#eef1e8;border:1px solid #dde3d3"></i>日程</span>
+            <span><i style="background:#f7ece7;border:1px solid #efd9cf"></i>跨天段落</span>
+            <span><i style="background:var(--clay)"></i>今天</span>
+            <span>点任意一天，看当天安排</span>
+          </div>
+        </div>
+
+        <div id="schedBox" style="margin-top:10px;display:none"></div>
+        <div id="scDayDetail"></div>
+      </div>
+    </section>
+
     <!-- ================= 穿搭指导 ================= -->
     <section class="page" id="page-fit">
-      <div class="kicker">04 · STYLE</div>
+      <div class="kicker">05 · STYLE</div>
       <h1 class="pt">穿搭指导</h1>
-      <p class="page-desc">按身型和天气搭配，已购衣柜优先穿，缺的那件推荐买。</p>
+      <p class="page-desc">结合天气、身型与衣橱，每天给你一套搭配建议。</p>
 
       <div class="card">
         <h3>身体档案 <span class="sub">填一次三围，身型自动推断</span></h3>
@@ -644,8 +714,9 @@ code.k{background:#efece3;border-radius:5px;padding:1px 7px;font-size:12px;font-
           </div>
           <div class="form-row" style="margin-top:10px">
             <div class="field" style="flex:2"><label>商品链接（想买时填）</label><input type="text" id="wdUrl" placeholder="https://… 或搜索链接" maxlength="300"></div>
+            <div class="field" style="flex:2"><label>图片路径（可选）</label><input type="text" id="wdImgPath" placeholder="assets/wardrobe/白衬衫.jpg" maxlength="120"></div>
             <div class="field" style="flex:0 0 auto;align-items:flex-start">
-              <label>实物照（可选）</label>
+              <label>或上传实物照</label>
               <button class="btn ghost" id="wdPhoto" style="white-space:nowrap">📷 上传图片</button>
               <input type="file" id="wdPhotoFile" accept="image/*" style="display:none">
             </div>
@@ -662,54 +733,6 @@ code.k{background:#efece3;border-radius:5px;padding:1px 7px;font-size:12px;font-
       <div class="card">
         <h3>推荐历史</h3>
         <div id="stLogBox" style="margin-top:10px"></div>
-      </div>
-    </section>
-
-    <!-- ================= 日程统筹 ================= -->
-    <section class="page" id="page-sched">
-      <div class="kicker">05 · SCHEDULE</div>
-      <h1 class="pt">日程统筹</h1>
-      <p class="page-desc">要事在前，做完划掉。过期未完成的会标红提醒。</p>
-
-      <div class="card">
-        <h3>新日程 <span class="sub">要占一段时间的（旅行 / 回家 / 出差），把「结束日期」也填上</span></h3>
-        <div class="form-row" style="margin-top:12px">
-          <div class="field"><label>开始日期</label><input type="date" id="scDate"></div>
-          <div class="field"><label>结束日期<span style="color:var(--line2)"> · 可留空</span></label><input type="date" id="scEnd"></div>
-          <div class="field"><label>时间</label><input type="time" id="scTime"></div>
-          <div class="field" style="flex:2;min-width:180px"><label>事项</label><input type="text" id="scTitle" placeholder="如：回深圳陪奶奶过生日" maxlength="50"></div>
-          <div class="field"><label>地点</label><input type="text" id="scPlace" placeholder="可选" maxlength="20"></div>
-          <button class="btn" id="scSave">加 入</button>
-        </div>
-        <div class="sc-preview" id="scPreview"></div>
-      </div>
-
-      <div class="card">
-        <div class="cal-bar">
-          <h3>日程表</h3>
-          <div class="seg" id="scSeg">
-            <button data-view="cal" class="on">月历</button>
-            <button data-view="list">列表</button>
-          </div>
-          <label style="font-size:12px;color:var(--soft);display:flex;gap:6px;align-items:center;cursor:pointer;margin-left:auto"><input type="checkbox" id="scHideDone"> 隐藏已完成</label>
-        </div>
-
-        <div id="scCalWrap">
-          <div class="cal-bar" style="margin-top:14px">
-            <span class="month-nav" style="gap:10px"><span id="scLabel" style="font-family:var(--serif);font-size:19px">—</span></span>
-            <span class="cal-nav"><button id="scPrev">‹</button><button id="scToday">今天</button><button id="scNext">›</button></span>
-          </div>
-          <div class="cal-grid" id="scGrid"></div>
-          <div class="cal-legend">
-            <span><i style="background:#eef1e8;border:1px solid #dde3d3"></i>日程</span>
-            <span><i style="background:#f7ece7;border:1px solid #efd9cf"></i>跨天段落</span>
-            <span><i style="background:var(--clay)"></i>今天</span>
-            <span>点任意一天，看当天安排</span>
-          </div>
-        </div>
-
-        <div id="schedBox" style="margin-top:10px;display:none"></div>
-        <div id="scDayDetail"></div>
       </div>
     </section>
 
@@ -896,6 +919,7 @@ code.k{background:#efece3;border-radius:5px;padding:1px 7px;font-size:12px;font-
   <div class="modal">
     <h2>数据备份</h2>
     <p class="mh-sub">本地模式的数据存在这台设备的浏览器里。换设备前记得导出；在线模式的数据已在云端，无需备份。</p>
+    <p class="mh-sub" style="margin-top:-4px">导入是<b>追加合并</b>：不会清空现有数据，内容完全相同的记录会自动跳过（同一份文件点两次也不会重复）。</p>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
       <button class="btn" id="bkExport">导出 JSON 备份</button>
       <button class="btn ghost" id="bkImport">导入备份</button>
@@ -1405,21 +1429,61 @@ const Data = {
     });
     return out;
   },
+  /* 业务字段签名：导入去重用。同一份文件点两次不会出现两遍 */
+  _rowSig(props){
+    const o = {};
+    Object.keys(props || {}).sort().forEach(k => {
+      if (SYS_COLS.indexOf(k) >= 0) return;
+      const v = props[k];
+      o[k] = (v === null || v === undefined) ? "" : String(v).trim();
+    });
+    return JSON.stringify(o);
+  },
+  _isDup(key, props, rows){
+    const sig = this._rowSig(props);
+    return (rows || []).some(r => this._rowSig(r) === sig);
+  },
+  /* 剥掉系统列：id / user_id / created_at 交给数据库自己生成 */
+  _cleanRow(row){
+    const props = Object.assign({}, row);
+    SYS_COLS.forEach(c => { delete props[c]; });
+    return props;
+  },
+  /* 导入：合并追加，绝不清空既有数据；重复行按业务签名跳过 */
   async importLocal(data){
     if (!data || !data.tables) throw new Error("备份文件格式不对");
+    const stat = { added: 0, skipped: 0, failed: 0 };
     for (const k of Object.keys(TABLES)){
-      if (Array.isArray(data.tables[k]) && data.tables[k].length){
-        if (this.online()){
-          for (const row of data.tables[k]){
-            const props = Object.assign({}, row); delete props._id;
-            await this.add(k, props);
-          }
-        } else {
-          this._localWrite(k, data.tables[k]);
-          this._localCommit(k, data.tables[k]);
+      const rows = data.tables[k];
+      if (!Array.isArray(rows) || !rows.length) continue;
+
+      if (this.online()){
+        /* 缓存没加载过就先拉一次，否则去重会失效 */
+        if (!(this.cache[k] && this.cache[k].loaded)){ try { await this.load(k); } catch(e){} }
+        for (const row of rows){
+          const props = this._cleanRow(row);
+          const cur = (this.cache[k] && this.cache[k].rows) || [];
+          if (this._isDup(k, props, cur)){ stat.skipped++; continue; }
+          try { await this.add(k, props); stat.added++; }
+          catch(e){ stat.failed++; }
+        }
+      } else {
+        const cur = this._localRead(k);
+        const add = [];
+        for (const row of rows){
+          const props = this._cleanRow(row);
+          if (this._isDup(k, props, cur.concat(add))){ stat.skipped++; continue; }
+          add.push(Object.assign({ _id: uid() }, props));
+        }
+        if (add.length){
+          const merged = cur.concat(add);
+          this._localWrite(k, merged);
+          this._localCommit(k, merged);
+          stat.added += add.length;
         }
       }
     }
+    return stat;
   }
 };
 
@@ -1479,8 +1543,8 @@ const PAGES = [
   { id:"overview", zh:"今日概览", en:"OVERVIEW", ico:"今" },
   { id:"money",    zh:"记账理财", en:"MONEY",    ico:"账" },
   { id:"habit",    zh:"习惯健康", en:"HABIT",    ico:"习" },
-  { id:"fit",      zh:"穿搭指导", en:"STYLE",    ico:"衣" },
   { id:"sched",    zh:"日程统筹", en:"SCHEDULE", ico:"程" },
+  { id:"fit",      zh:"穿搭指导", en:"STYLE",    ico:"衣" },
   { id:"buy",      zh:"待买清单", en:"WISH",     ico:"买" },
   { id:"media",    zh:"书影音",   en:"LIBRARY",  ico:"藏" },
   { id:"orchid",   zh:"狐狸之火", en:"ORCHID",   ico:"兰" }
@@ -1839,6 +1903,18 @@ const ST_SHAPE_TIPS = {
 const ST_NEUTRALS = ["黑","白","灰","米","驼","藏青","裸","杏"];
 function stIsNeutral(c){ return ST_NEUTRALS.some(n => (c || "").indexOf(n) >= 0); }
 
+/* 日期文案：10月12日 周一
+   自带实现、不引用 Sched 段的工具函数，保证穿搭模块能独立测试 */
+const ST_WD = ["周日","周一","周二","周三","周四","周五","周六"];
+function stDateText(d){
+  d = d || todayStr();
+  const dt = new Date(String(d) + "T00:00:00");
+  const wd = isNaN(dt.getTime()) ? "" : ST_WD[dt.getDay()];
+  return (+String(d).slice(5,7)) + "月" + (+String(d).slice(8)) + "日" + (wd ? " " + wd : "");
+}
+/* 未购单品被推荐到第几次才提示「可以考虑入手」 */
+const ST_BUY_HINT = 5;
+
 /* ---------- 穿搭模块：本机草稿 + 错误人话化 ----------
    铁律：用户敲进去的内容绝不允许「凭空消失」。
    ① 每改一个字段就存一份本机草稿；
@@ -2024,7 +2100,8 @@ const Style = {
         '<div class="zh">推荐会出现在这里</div>' +
         '<div style="line-height:2;margin-top:4px">' +
         '还差一步：先到下面<b>「衣橱」</b>加几件<b>已购</b>单品——<b>上衣 / 下装 / 鞋履</b>各一件就够（配饰可选）。<br>' +
-        '加完回到这张卡，点一下天气（晴 / 雨 × 热 / 冷）和场景，上面立刻出一整套：单品卡片 + <b>为什么这样搭</b> + 搭配小提示。</div></div>';
+        '加完回到这张卡，点一下天气（晴 / 雨 × 热 / 冷）和场景，上面立刻出一整套：单品卡片 + <b>搭配说明</b> + 搭配小提示。<br>' +
+        '想让单品显示真实图片：把图片放进网站仓库的 <b>assets/wardrobe/</b>，再在单品里填路径（如 assets/wardrobe/白衬衫.jpg）。</div></div>';
       return;
     }
     const [cond, temp] = this.weather.split(" · ");
@@ -2059,23 +2136,37 @@ const Style = {
     if (shape === "梨形" && bottom) tips.push("包/鞋与下装同色系，视线连贯更显高");
     if (shoe) tips.push("鞋和配饰控制在两个颜色以内，整体不散");
 
+    /* ---------- 渲染：日期 + 天气摘要 → 已购真图 → 未购文字卡 → 搭配说明 ---------- */
+    const buyCount = picked ? (num(picked.buyCount) || 0) : 0;
     box.innerHTML =
-      '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:stretch">' +
-      set.map(s =>
-        '<div style="flex:1 1 120px;border:1px solid var(--line2);border-radius:12px;padding:10px;text-align:center">' +
-        (s.image ? '<img src="' + esc(s.image) + '" style="width:100%;max-height:110px;object-fit:cover;border-radius:8px" alt="">' : "") +
-        '<div style="font-size:13px;font-weight:600;margin-top:6px">' + esc(s.name || "未命名") + '</div>' +
-        '<div style="font-size:11px;color:var(--soft);margin-top:2px">' + esc(s.category || "") + " · " + esc(s.color || "—") + '</div></div>').join("") +
-      (picked ?
-        '<div style="flex:1 1 120px;border:1px dashed #c9a227;border-radius:12px;padding:10px;text-align:center;background:#faf6ea">' +
-        (picked.image ? '<img src="' + esc(picked.image) + '" style="width:100%;max-height:110px;object-fit:cover;border-radius:8px" alt="">' : "") +
-        '<div style="font-size:13px;font-weight:600;margin-top:6px">想买 · ' + esc(picked.name || "未命名") + '</div>' +
-        '<div style="font-size:11px;color:var(--soft);margin-top:2px">被推荐 ' + (num(picked.buyCount) || 0) + ' 次</div>' +
-        (picked.productUrl ? '<a href="' + esc(picked.productUrl) + '" target="_blank" rel="noopener" style="font-size:12px;color:var(--clay);display:inline-block;margin-top:4px">去看商品 ↗</a>' : "") +
-        '</div>' : "") +
+      '<div class="st-top">' +
+        '<span class="st-date">' + esc(stDateText()) + '</span>' +
+        '<span class="st-tag wx">' + esc(this.weather || "天气待定") + '</span>' +
+        '<span class="st-tag">' + esc(scene) + '</span>' +
       '</div>' +
-      '<div style="font-size:13px;line-height:1.8;margin-top:10px;color:#4a443a"><b>为什么这样搭：</b>' + (reasons.length ? reasons.join("；") : "按「" + esc(scene) + " · " + esc(this.weather) + "」从已购里挑的") + '。</div>' +
-      (tips.length ? '<div style="font-size:12.5px;line-height:1.8;margin-top:4px;color:var(--soft)"><b>小提示：</b>' + tips.join("；") + '。</div>' : "") +
+      '<div class="st-set">' +
+      set.map(s =>
+        '<div class="st-item">' +
+        (s.image
+          ? '<img src="' + esc(s.image) + '" alt="' + esc(s.name || "") + '" loading="lazy">'
+          : '<div class="noim">' + esc(s.category || "单品") + ' · 待补图</div>') +
+        '<div class="tx"><div class="nm">' + esc(s.name || "未命名") + '</div>' +
+        '<div class="mt">' + esc(s.category || "") + " · " + esc(s.color || "—") + '</div></div>' +
+        '</div>').join("") +
+      '</div>' +
+      (picked ?
+        '<div class="st-pick">' +
+        (buyCount >= ST_BUY_HINT
+          ? '<span class="st-badge">被推荐 ' + buyCount + ' 次，可以考虑入手</span>' : "") +
+        '<div class="hd">想买 · 补齐「' + esc(picked.category || "单品") + '」</div>' +
+        '<div class="nm">' + esc(picked.name || "未命名") + '</div>' +
+        '<div class="mt">' + esc(picked.category || "—") + " · " + esc(picked.color || "—") + " · " + esc(picked.material || "—") + '</div>' +
+        (buyCount > 0 && buyCount < ST_BUY_HINT ? '<div class="st-cnt">被推荐 ' + buyCount + ' 次</div>' : "") +
+        (picked.productUrl
+          ? '<div class="go"><a class="btn ghost" href="' + esc(picked.productUrl) + '" target="_blank" rel="noopener">查看商品 ↗</a></div>' : "") +
+        '</div>' : "") +
+      '<div class="st-why"><b>搭配说明：</b>' + (reasons.length ? reasons.join("；") : "按「" + esc(scene) + " · " + esc(this.weather) + "」从已购里挑的") + '。</div>' +
+      (tips.length ? '<div class="st-tips"><b>小提示：</b>' + tips.join("；") + '。</div>' : "") +
       '<button class="btn" id="stSave" style="margin-top:12px">存入推荐历史</button>';
 
     $("#stSave").addEventListener("click", () => this.saveSuggest(set, picked, reasons, tips, cond, temp));
@@ -2115,9 +2206,11 @@ const Style = {
   async saveItem(){
     const name = $("#wdName").value.trim();
     if (!name){ toast("给单品起个名字"); return; }
+    /* 图片二选一：填了「图片路径」就用路径（指向仓库 assets/wardrobe/），否则用上传的实物照（base64） */
+    const imgPath = $("#wdImgPath") ? $("#wdImgPath").value.trim() : "";
     const props = {
       name,
-      image: this.pendingImg || "",
+      image: imgPath || this.pendingImg || "",
       productUrl: $("#wdUrl").value.trim(),
       category: $("#wdCategory").value,
       color: $("#wdColor").value.trim(),
@@ -2131,7 +2224,7 @@ const Style = {
     try {
       await Data.add("wardrobe", props);
       $("#wdName").value = ""; $("#wdUrl").value = ""; $("#wdColor").value = "";
-      $("#wdMaterial").value = ""; $("#wdStyle").value = "";
+      $("#wdMaterial").value = ""; $("#wdStyle").value = ""; if ($("#wdImgPath")) $("#wdImgPath").value = "";
       $("#wdPhotoPrevWrap").style.display = "none"; this.pendingImg = null;
       toast(props.owned === "true" ? "已加入衣橱" : "已加入想买清单");
     } catch(e){ toast("保存失败：" + (e.message||e)); }
@@ -2163,7 +2256,7 @@ const Style = {
         '<div style="font-size:13px;font-weight:600">' + esc(r.name || "未命名") + '</div>' +
         '<div style="font-size:11px;color:var(--soft);margin-top:2px">' + esc(r.category || "") + " · " + esc(r.color || "—") + " · " + esc(r.material || "—") + '</div>' +
         (r.styleTags ? '<div style="font-size:11px;color:var(--soft);margin-top:2px">#' + esc(r.styleTags.trim().split(/\s+/).join(" #")) + '</div>' : "") +
-        (!isOwned(r) ? '<div style="font-size:11px;color:#9a6b2f;margin-top:3px">被推荐 ' + (num(r.buyCount) || 0) + ' 次' +
+        (!isOwned(r) ? '<div style="font-size:11px;margin-top:3px;color:' + ((num(r.buyCount) || 0) >= ST_BUY_HINT ? "#c0392b" : "#9a6b2f") + '">被推荐 ' + (num(r.buyCount) || 0) + ' 次' +
           (r.productUrl ? ' · <a href="' + esc(r.productUrl) + '" target="_blank" rel="noopener" style="color:var(--clay)">看商品 ↗</a>' : "") + '</div>' : "") +
         '<button class="icon-btn" data-wd-del="' + r._id + '" style="margin-top:6px">✕ 移除</button>' +
         '</div></div>').join("") + '</div>';
@@ -3354,8 +3447,12 @@ const Backup = {
     $("#bkFile").addEventListener("change", async e => {
       const f = e.target.files[0]; if (!f) return;
       try {
-        await Data.importLocal(JSON.parse(await f.text()));
-        toast("备份已导入");
+        const st = await Data.importLocal(JSON.parse(await f.text()));
+        const parts = [];
+        if (st.added)   parts.push("新增 " + st.added + " 条");
+        if (st.skipped) parts.push("跳过重复 " + st.skipped + " 条");
+        if (st.failed)  parts.push("失败 " + st.failed + " 条");
+        toast(parts.length ? "导入完成 · " + parts.join(" · ") : "文件里没有可导入的数据");
         $("#backupMask").classList.remove("on");
         Data.loadAll();
       } catch(err){ toast("导入失败：" + (err.message||err)); }
