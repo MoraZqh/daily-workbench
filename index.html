@@ -366,7 +366,7 @@ h1.pt{font-family:var(--serif);font-size:28px;font-weight:600;letter-spacing:1px
 .st-tag{font-size:11.5px;padding:2px 10px;border-radius:99px;background:#efece3;color:#6b6558}
 .st-tag.wx{background:#e3ecf0;color:var(--sky)}
 .st-set{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
-.st-item{border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:#fff}
+.st-item{position:relative;border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:#fff}
 .st-item img{width:100%;height:118px;object-fit:cover;display:block;background:#f2efe6}
 .st-item .noim{width:100%;height:118px;display:flex;align-items:center;justify-content:center;background:#f2efe6;color:#b0a99a;font-size:12px;letter-spacing:1px}
 .st-item .tx{padding:8px 10px;text-align:center}
@@ -381,6 +381,12 @@ h1.pt{font-family:var(--serif);font-size:28px;font-weight:600;letter-spacing:1px
 .st-badge{position:absolute;top:-11px;right:12px;background:#c0392b;color:#fff;font-size:11px;font-weight:600;padding:3px 10px;border-radius:99px;box-shadow:0 2px 8px rgba(192,57,43,.28)}
 .st-why{font-size:13px;line-height:1.8;margin-top:12px;color:#4a443a}
 .st-tips{font-size:12.5px;line-height:1.8;margin-top:5px;color:var(--soft)}
+.st-item.try{border-style:dashed;border-color:#c9a227;background:#faf6ea}
+.st-item .rep{font-size:11px;color:#9a6b2f;padding:0 10px 8px;text-align:center}
+.st-trytag{position:absolute;top:6px;left:6px;background:#c9a227;color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px}
+.st-tryn,.st-gap{margin-top:12px;font-size:12.5px;line-height:1.7;color:#9a6b2f;background:#faf6ea;border:1px dashed #e0cf9a;border-radius:10px;padding:8px 12px}
+.st-tryn{margin-top:10px}
+.st-pick .go button{width:100%}
 .st-pick .go a{text-decoration:none;display:inline-block}
 .cover .img-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .cover .img-shade{position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(20,16,8,.72))}
@@ -1915,6 +1921,10 @@ function stDateText(d){
 /* 未购单品被推荐到第几次才提示「可以考虑入手」 */
 const ST_BUY_HINT = 5;
 
+/* 一套搭配的品类顺序；前三类是硬缺口（缺了就组不出一整套），配饰可选 */
+const ST_ALL_CATS = ["上衣", "下装", "鞋履", "配饰"];
+const ST_HARD_CATS = ["上衣", "下装", "鞋履"];
+
 /* ---------- 穿搭模块：本机草稿 + 错误人话化 ----------
    铁律：用户敲进去的内容绝不允许「凭空消失」。
    ① 每改一个字段就存一份本机草稿；
@@ -1947,6 +1957,7 @@ const Style = {
   weather: "",         /* 如 "多云 · 微凉" */
   scene: "通勤",
   pendingImg: null,
+  tryId: null,          /* 试搭中的想买单品 id（临时放进搭配，不写历史、不计数） */
   bpBaseline: null,    /* 上次由程序写入表单的内容指纹，用来判断用户有没有手改 */
 
   init(){
@@ -2114,16 +2125,36 @@ const Style = {
       return pool.length ? pool[Math.floor(pool.length / 2) % pool.length] : null; /* 稳定取中位，避免每次刷新换一套 */
     };
     const top = pick("上衣"), bottom = pick("下装"), shoe = pick("鞋履"), acc = pick("配饰");
-    const set = [top, bottom, shoe, acc].filter(Boolean);
-    if (!set.length){
+    const baseSet = [top, bottom, shoe, acc].filter(Boolean);
+    if (!baseSet.length){
       box.innerHTML = '<div class="empty" style="padding:18px 0"><div class="zh">衣橱里还没有匹配的单品</div>换个场景试试，或把「风格」标签留空（留空=百搭）</div>';
       return;
     }
     const shapeTip = ST_SHAPE_TIPS[shape] || { bottom:"", top:"", why:"身型档案还没填，填好三围推荐会更准" };
-    /* 未购推荐：优先补缺的分类，其次同场景想买 */
     const want = wd.filter(r => r.owned !== "true" && r.owned !== true);
-    const missing = want.find(r => r.category && !set.some(s => s.category === r.category));
-    const picked = missing || (want.length ? want.find(r => stSeasonFit(r, temp)) : null);
+
+    /* ---------- 试搭：把想买的那件临时放进这套 ----------
+       只影响这一张卡的显示：不写推荐历史、不给 buyCount 计数。
+       同类目已有 → 替换那一件；没有这一类 → 补进这套。 */
+    const trying = (this.tryId && want.filter(r => String(r._id) === String(this.tryId))[0]) || null;
+    if (this.tryId && !trying) this.tryId = null;      /* 单品被删或改成已购 → 自动退出试搭 */
+    const set = baseSet.slice();
+    let tryReplaced = null;
+    if (trying){
+      const i = set.findIndex(s => s.category === trying.category);
+      if (i >= 0){ tryReplaced = set[i]; set[i] = trying; }
+      else set.push(trying);
+    }
+
+    /* ---------- 缺口：这套里还缺哪一类 ---------- */
+    const missCats = ST_ALL_CATS.filter(c => !set.some(s => s.category === c));
+    const hardMiss = missCats.filter(c => ST_HARD_CATS.indexOf(c) >= 0);
+
+    /* ---------- 未购推荐：优先补硬缺口，其次补配饰，最后同场景想买 ---------- */
+    const missing = want.filter(r => r.category && missCats.indexOf(r.category) >= 0)[0];
+    const picked = trying ? null : (missing || (want.length ? want.filter(r => stSeasonFit(r, temp))[0] : null));
+    const pickFillsGap = !!(picked && picked.category && ST_HARD_CATS.indexOf(picked.category) >= 0 &&
+      !baseSet.some(s => s.category === picked.category));
 
     const reasons = [];
     if (shape) reasons.push(shape + "身型：" + shapeTip.why);
@@ -2136,42 +2167,82 @@ const Style = {
     if (shape === "梨形" && bottom) tips.push("包/鞋与下装同色系，视线连贯更显高");
     if (shoe) tips.push("鞋和配饰控制在两个颜色以内，整体不散");
 
-    /* ---------- 渲染：日期 + 天气摘要 → 已购真图 → 未购文字卡 → 搭配说明 ---------- */
+    /* ---------- 渲染：日期 + 天气摘要 → 试搭条 → 搭配（已购真图）→ 缺口 → 想买文字卡 → 说明 ---------- */
     const buyCount = picked ? (num(picked.buyCount) || 0) : 0;
+    const gapTxt = hardMiss.length ? hardMiss.join(" / ") : (missCats.length ? missCats.join(" / ") : "");
     box.innerHTML =
       '<div class="st-top">' +
         '<span class="st-date">' + esc(stDateText()) + '</span>' +
         '<span class="st-tag wx">' + esc(this.weather || "天气待定") + '</span>' +
         '<span class="st-tag">' + esc(scene) + '</span>' +
       '</div>' +
+      (trying ?
+        '<div class="st-tryn">试搭中：现在看的是「' + esc(trying.name || "想买单品") + '」放进这套之后的样子' +
+        (tryReplaced
+          ? '（替代「' + esc(tryReplaced.name || "") + '」）'
+          : '（补上这套缺的「' + esc(trying.category || "") + '」）') +
+        '。试搭不写入推荐历史，也不给 buyCount 计数。</div>' : "") +
       '<div class="st-set">' +
       set.map(s =>
-        '<div class="st-item">' +
+        '<div class="st-item' + ((trying && s === trying) ? " try" : "") + '">' +
+        ((trying && s === trying) ? '<span class="st-trytag">试搭</span>' : "") +
         (s.image
           ? '<img src="' + esc(s.image) + '" alt="' + esc(s.name || "") + '" loading="lazy">'
           : '<div class="noim">' + esc(s.category || "单品") + ' · 待补图</div>') +
         '<div class="tx"><div class="nm">' + esc(s.name || "未命名") + '</div>' +
         '<div class="mt">' + esc(s.category || "") + " · " + esc(s.color || "—") + '</div></div>' +
+        ((trying && s === trying && tryReplaced) ? '<div class="rep">替代「' + esc(tryReplaced.name || "") + '」</div>' : "") +
         '</div>').join("") +
       '</div>' +
+      ((gapTxt && !picked) ?
+        '<div class="st-gap">这套还缺「' + esc(gapTxt) + '」' +
+        (hardMiss.length
+          ? '——想买清单里还没有这一类，加一件进来，成套就完整了。'
+          : '（可选）——补一件配饰会更完整。') + '</div>' : "") +
       (picked ?
         '<div class="st-pick">' +
         (buyCount >= ST_BUY_HINT
           ? '<span class="st-badge">被推荐 ' + buyCount + ' 次，可以考虑入手</span>' : "") +
-        '<div class="hd">想买 · 补齐「' + esc(picked.category || "单品") + '」</div>' +
+        '<div class="hd">' + (pickFillsGap
+            ? '这套缺「' + esc(picked.category) + '」 · 补上就成套'
+            : '想买 · 同场景备选') + '</div>' +
         '<div class="nm">' + esc(picked.name || "未命名") + '</div>' +
         '<div class="mt">' + esc(picked.category || "—") + " · " + esc(picked.color || "—") + " · " + esc(picked.material || "—") + '</div>' +
         (buyCount > 0 && buyCount < ST_BUY_HINT ? '<div class="st-cnt">被推荐 ' + buyCount + ' 次</div>' : "") +
         (picked.productUrl
           ? '<div class="go"><a class="btn ghost" href="' + esc(picked.productUrl) + '" target="_blank" rel="noopener">查看商品 ↗</a></div>' : "") +
+        '<div class="go"><button class="btn ghost" id="stTryPick">拿它试搭一下</button></div>' +
         '</div>' : "") +
       '<div class="st-why"><b>搭配说明：</b>' + (reasons.length ? reasons.join("；") : "按「" + esc(scene) + " · " + esc(this.weather) + "」从已购里挑的") + '。</div>' +
       (tips.length ? '<div class="st-tips"><b>小提示：</b>' + tips.join("；") + '。</div>' : "") +
-      '<button class="btn" id="stSave" style="margin-top:12px">存入推荐历史</button>';
+      (trying
+        ? '<button class="btn ghost" id="stStopTry" style="margin-top:12px">退出试搭</button>'
+        : '<button class="btn" id="stSave" style="margin-top:12px">存入推荐历史</button>');
 
-    $("#stSave").addEventListener("click", () => this.saveSuggest(set, picked, reasons, tips, cond, temp));
+    const stSaveBtn = $("#stSave");
+    if (stSaveBtn) stSaveBtn.addEventListener("click", () => this.saveSuggest(set, picked, reasons, tips, cond, temp));
+    const stStopBtn = $("#stStopTry");
+    if (stStopBtn) stStopBtn.addEventListener("click", () => this.stopTry());
+    const stTryBtn = $("#stTryPick");
+    if (stTryBtn) stTryBtn.addEventListener("click", () => this.startTry(picked._id));
+  },
+  /* ============ 试搭（只影响这张卡的显示，不落库、不计数） ============ */
+  startTry(id){
+    if (id == null || id === "") return;
+    this.tryId = id;
+    this.renderSuggest();
+    const box = $("#stResult");
+    if (box && box.scrollIntoView){ try { box.scrollIntoView({ behavior: "smooth", block: "center" }); } catch(e){} }
+    toast("试搭中 · 不会写入推荐历史");
+  },
+  stopTry(){
+    this.tryId = null;
+    this.renderSuggest();
+    toast("已退出试搭");
   },
   async saveSuggest(set, picked, reasons, tips, cond, temp){
+    /* 试搭模式下按钮本就不渲染，这里再兜一道：绝不让试搭结果写进历史、也不动 buyCount */
+    if (this.tryId){ toast("试搭模式不会写入推荐历史，先退出试搭"); return; }
     const props = {
       date: todayStr(),
       weather: cond + " " + temp,
@@ -2257,7 +2328,9 @@ const Style = {
         '<div style="font-size:11px;color:var(--soft);margin-top:2px">' + esc(r.category || "") + " · " + esc(r.color || "—") + " · " + esc(r.material || "—") + '</div>' +
         (r.styleTags ? '<div style="font-size:11px;color:var(--soft);margin-top:2px">#' + esc(r.styleTags.trim().split(/\s+/).join(" #")) + '</div>' : "") +
         (!isOwned(r) ? '<div style="font-size:11px;margin-top:3px;color:' + ((num(r.buyCount) || 0) >= ST_BUY_HINT ? "#c0392b" : "#9a6b2f") + '">被推荐 ' + (num(r.buyCount) || 0) + ' 次' +
-          (r.productUrl ? ' · <a href="' + esc(r.productUrl) + '" target="_blank" rel="noopener" style="color:var(--clay)">看商品 ↗</a>' : "") + '</div>' : "") +
+          (r.productUrl ? ' · <a href="' + esc(r.productUrl) + '" target="_blank" rel="noopener" style="color:var(--clay)">看商品 ↗</a>' : "") + '</div>' +
+          '<button class="icon-btn" data-wd-try="' + esc(r._id) + '" style="margin-top:6px">' +
+          (String(this.tryId) === String(r._id) ? "试搭中 ✓" : "试搭一下") + '</button>' : "") +
         '<button class="icon-btn" data-wd-del="' + r._id + '" style="margin-top:6px">✕ 移除</button>' +
         '</div></div>').join("") + '</div>';
     $$("#wdBox [data-wd-del]").forEach(b => b.addEventListener("click", async () => {
@@ -2265,6 +2338,7 @@ const Style = {
       try { await Data.remove("wardrobe", b.dataset.wdDel); toast("已移除"); }
       catch(e){ toast("删除失败：" + (e.message||e)); }
     }));
+    $$("#wdBox [data-wd-try]").forEach(b => b.addEventListener("click", () => this.startTry(b.dataset.wdTry)));
   },
 
   /* ============ 推荐历史 ============ */
