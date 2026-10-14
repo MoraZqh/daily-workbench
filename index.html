@@ -882,14 +882,16 @@ code.k{background:#efece3;border-radius:5px;padding:1px 7px;font-size:12px;font-
       <div class="sec-h">Supabase 云同步 <span class="tag rec">推荐</span></div>
       <div class="sec-sub">数据存进你自己的 Supabase 数据库。手机、电脑、换浏览器，登录同一个账号就能看到同一份数据。</div>
       <div class="conn-state" id="sbState">尚未配置</div>
-      <div class="conn-row"><label>项目地址</label><input id="sbUrl" placeholder="https://xxxxxxxx.supabase.co" spellcheck="false" autocomplete="off"></div>
-      <div class="conn-row"><label>anon key</label><input id="sbKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6…" spellcheck="false" autocomplete="off"></div>
-      <div class="conn-row"><label>邮箱</label><input id="sbEmail" placeholder="登录邮箱" spellcheck="false" autocomplete="off"></div>
-      <div class="conn-row"><label>密码</label><input id="sbPass" type="password" placeholder="登录密码（不会保存）" autocomplete="off"></div>
+      <div class="sec-sub" style="margin-top:0">手机端登录失败，多半是键盘把输入改掉了（首字母自动大写、结尾多一个空格、中文输入法打出全角字符）。下面几个框已关掉自动大写与自动纠正。</div>
+      <div class="conn-row"><label>项目地址</label><input id="sbUrl" type="url" inputmode="url" placeholder="https://xxxxxxxx.supabase.co" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off"></div>
+      <div class="conn-row"><label>anon key</label><input id="sbKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6…" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off"></div>
+      <div class="conn-row"><label>邮箱</label><input id="sbEmail" type="email" inputmode="email" placeholder="登录邮箱" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off"></div>
+      <div class="conn-row"><label>密码</label><input id="sbPass" type="password" placeholder="登录密码（不会保存）" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"><button class="btn ghost" id="sbEye" type="button" style="flex:none;white-space:nowrap;padding:6px 10px;font-size:12px">👁 显示</button></div>
       <div class="conn-actions">
         <button class="btn" id="sbLogin">登录</button>
         <button class="btn ghost" id="sbSignup">注册新账号</button>
         <button class="btn ghost" id="sbCheck">连接自检</button>
+        <button class="btn ghost" id="sbCopy">复制提示信息</button>
         <button class="btn ghost" id="sbOut">退出登录</button>
       </div>
       <div class="diag" id="sbDiag"></div>
@@ -1066,6 +1068,52 @@ const SDK = {
    ============================================================ */
 const LS_CFG = "lw.sb.cfg", LS_SES = "lw.sb.session";
 
+/* ---------- 手机端输入兜底 ----------
+   手机键盘和电脑键盘不一样，会偷偷改动输入内容，这是「同一个密码电脑能登、手机登不上」
+   的头号原因：
+     · iOS 会自动把输入框首字母大写        → 邮箱变成 Itsuptomora@163.com
+     · 联想/自动更正常在结尾补一个空格      → "密码 " ≠ "密码"
+     · 中文输入法下打出的 @ . 是**全角**的  → ａｂｃ＠１６３．ｃｏｍ
+     · 复制粘贴会带上零宽字符 / 不换行空格
+   邮箱做归一化（自动修正），密码只做体检（绝不改动，改了就成另一个密码了）。 */
+function sbNormEmail(s){
+  let t = String(s == null ? "" : s);
+  try { t = t.normalize("NFKC"); } catch(e){}            // 全角 ａｂｃ＠ → 半角 abc@（中文输入法常见）
+  return t
+    .replace(/[\s\u00A0\u200B-\u200D\uFEFF]/g, "")       // 所有空格 + 零宽字符（含粘贴带入的）
+    .toLowerCase();                                       // 邮箱大小写不敏感，统一小写
+}
+function sbEmailIssues(raw){
+  const s = String(raw == null ? "" : raw), out = [];
+  if (s !== s.trim()) out.push("首尾有空格");
+  if (/[\u00A0\u200B-\u200D\uFEFF]/.test(s)) out.push("混了零宽字符（复制粘贴带入的）");
+  if (/[\uFF01-\uFF5E\u3000]/.test(s)) out.push("含全角字符（@ 或 . 是全角，已自动转半角）");
+  if (/[\u4E00-\u9FFF]/.test(s)) out.push("含中文");
+  if (/[A-Z]/.test(s)) out.push("含大写字母（手机常自动大写首字母，已自动转小写）");
+  return out;
+}
+function sbPwIssues(pw){
+  const p = String(pw == null ? "" : pw), out = [];
+  if (/^[ \t\r\n\v\f]|[ \t\r\n\v\f]$/.test(p)) out.push("首尾有空格（手机键盘容易误加，点「显示」看到末尾空白就删掉）");
+  if (/^[\u3000]|[\u3000]$/.test(p)) out.push("首尾有全角空格");
+  if (/\u00A0/.test(p)) out.push("含不换行空格（多为粘贴带入）");
+  if (/[\u200B-\u200D\uFEFF]/.test(p)) out.push("含零宽字符（肉眼看不见但会导致密码不符）");
+  if (/[\uFF01-\uFF5E]/.test(p)) out.push("含全角字符（中文输入法打出的 ａｂｃ１２３，切到英文重输）");
+  if (/[\u4E00-\u9FFF]/.test(p)) out.push("含中文字符");
+  if (/[\u2018\u2019\u201C\u201D\u2013\u2014]/.test(p)) out.push("含智能标点（手机把直引号换成了弯引号）");
+  return out;
+}
+/* 本地存储是否真的能写 —— 无痕模式 / 隐私设置会让登录成功但会话存不住 */
+function sbStoreOk(){
+  try {
+    const k = "lw.probe";
+    localStorage.setItem(k, "1");
+    const v = localStorage.getItem(k);
+    localStorage.removeItem(k);
+    return v === "1";
+  } catch(e){ return false; }
+}
+
 const SB = {
   cfg: null,       // { url, anonKey, email }
   session: null,   // { access_token, refresh_token, expires_at, email, user }
@@ -1083,7 +1131,7 @@ const SB = {
       builtin = el ? JSON.parse(el.textContent || "null") : null;
     } catch(e){}
     if (builtin && builtin.url){
-      this.cfg = { url: String(builtin.url).trim(), anonKey: String(builtin.anonKey || "").trim(), email: String(builtin.email || "").trim() };
+      this.cfg = { url: String(builtin.url).trim(), anonKey: String(builtin.anonKey || "").trim(), email: sbNormEmail(builtin.email || "") };
     } else {
       this.cfg = null;
     }
@@ -1093,9 +1141,9 @@ const SB = {
     this.cfg = {
       url: String(c.url || "").trim().replace(/\/+$/, ""),
       anonKey: String(c.anonKey || "").trim(),
-      email: String(c.email || "").trim()
+      email: sbNormEmail(c.email || "")
     };
-    localStorage.setItem(LS_CFG, JSON.stringify(this.cfg));
+    try { localStorage.setItem(LS_CFG, JSON.stringify(this.cfg)); } catch(e){ /* 无痕模式：不落盘也能用本次会话 */ }
   },
   clearCfg(){ this.cfg = null; localStorage.removeItem(LS_CFG); },
   configured(){ return !!(this.cfg && this.cfg.url && this.cfg.anonKey); },
@@ -3280,7 +3328,7 @@ const BindUI = {
     return {
       url: $("#sbUrl").value.trim().replace(/\/+$/, ""),
       anonKey: $("#sbKey").value.trim(),
-      email: $("#sbEmail").value.trim()
+      email: sbNormEmail($("#sbEmail").value)
     };
   },
   renderSbState(){
@@ -3337,23 +3385,71 @@ const BindUI = {
     }
   },
 
+  /* 登录失败分诊：手机端和电脑端的差异几乎都出在「输入被键盘改了」或「网络到不了」，
+     所以失败时先把这次真正发出去的账号信息摊开，再给对应建议。 */
+  loginAdvice(cfg, rawEmail, pass, errMsg){
+    const m = String(errMsg || "");
+    const eNotes = sbEmailIssues(rawEmail);
+    const pNotes = sbPwIssues(pass);
+    const L = [];
+    L.push("这次实际发送的账号：");
+    L.push("· 邮箱：" + cfg.email + (eNotes.length ? "　⚠ " + eNotes.join("；") : "　✓ 格式正常"));
+    L.push("· 密码：" + pass.length + " 位" + (pNotes.length ? "　⚠ " + pNotes.join("；") : "　✓ 字符正常"));
+    L.push("");
+    if (/连不上|网络|Failed to fetch|NetworkError|Load failed/i.test(m)){
+      L.push("→ 这是「连不上服务器」，不是密码问题。手机先换个网络再试：");
+      L.push("   Wi-Fi ⇄ 移动数据 来回切一次（部分网络会拦 supabase.co）");
+      L.push("   想确认网络通不通：用手机浏览器直接打开下面这个地址，");
+      L.push("   能看到一小段 JSON 就说明通，一片空白/报错就是网络被拦：");
+      L.push("   " + cfg.url + "/auth/v1/health");
+    } else if (/invalid login credentials|Invalid login|Email not confirmed|not confirmed/i.test(m)){
+      if (/not confirmed/i.test(m)){
+        L.push("→ 服务端说这个邮箱「还没确认」。到 Supabase → Authentication → Users，");
+        L.push("   找到这一行点右侧「⋯」→ Confirm email（或整行 Delete 后重新 Add user）。");
+      } else {
+        L.push("→ 服务端认为邮箱或密码不对（电脑能登、手机登不上，99% 是输入被键盘改了）：");
+        L.push("   ① 点右边「👁 显示密码」，肉眼对一遍——重点看末尾有没有多一个空格；");
+        L.push("   ② 密码里如果有英文，确认没被自动大写成首字母大写；");
+        L.push("   ③ 邮箱已被自动转成小写重发，若仍失败请在电脑端「复制配置」→ 手机「粘贴配置」带过来。");
+      }
+    } else if (/rate|429|too many|For security purposes/i.test(m)){
+      L.push("→ 短时间内试太多次被限流了，等 1 分钟再点一次「登录」即可。");
+    } else if (/Invalid API key|apikey|401/i.test(m)){
+      L.push("→ anon key 不对或已失效：到 Supabase → Settings → API 重新复制 anon public key。");
+    } else if (/fetch|timeout|超时/i.test(m)){
+      L.push("→ 网络超时，手机换个网络（Wi-Fi ⇄ 流量）再试。");
+    } else {
+      L.push("→ 先按这三步排查：① 点「👁 显示密码」核对密码首尾 ② 换个网络 ③ 点「连接自检」看表在不在。");
+    }
+    return L.join("\n");
+  },
+
   async sbLogin(){
     const cfg = this.readCfg();
     if (!cfg.url || !cfg.anonKey) return this.sbDiag("请先填写项目地址和 anon key。");
+    const rawEmail = $("#sbEmail").value;
     const pass = $("#sbPass").value;
     if (!cfg.email || !pass) return this.sbDiag("请填写邮箱和密码。");
-    this.sbDiag("正在登录…");
+    /* 把归一化后的邮箱回填，让用户看得见「实际用来登录的值」——手机端最容易在这里出岔子 */
+    if (rawEmail !== cfg.email) $("#sbEmail").value = cfg.email;
+    this.sbDiag("正在登录…\n账号：" + cfg.email);
     try {
       SB.saveCfg(cfg);
       await SB.signIn(cfg.email, pass);
       SB.saveCfg(Object.assign({}, SB.cfg, { email: cfg.email }));
       $("#sbPass").value = "";
       await this.activate();
-      this.sbDiag("✓ 登录成功：" + cfg.email + "\n已加载 " + Object.keys(TABLES).length + " 张表，云同步已开启。");
+      let msg = "✓ 登录成功：" + cfg.email + "\n已加载 " + Object.keys(TABLES).length + " 张表，云同步已开启。";
+      if (rawEmail !== cfg.email) msg += "\n（注：邮箱已自动去掉空格 / 转成小写后再登录）";
+      if (SB.persistOk === false || !sbStoreOk())
+        msg += "\n\n⚠ 本机存不住登录状态（可能开了无痕浏览 / 隐私限制）：\n   现在能用，但关掉页面就要重新登录。换普通窗口打开即可。";
+      this.sbDiag(msg);
       toast("云同步已开启");
     } catch(e){
-      this.sbDiag("✗ 登录失败：" + (e.message || e) +
-        "\n\n常见原因：\n· 邮箱或密码不对\n· 项目里还没有这个用户\n   Authentication → Users → Add user（勾选 Auto Confirm）\n· 项目开启了邮箱确认，需先去邮箱点确认链接\n· 项目地址或 anon key 填错");
+      this.sbDiag("✗ 登录失败：" + (e.message || e) + "\n\n" +
+        this.loginAdvice(cfg, rawEmail, pass, e.message || e) +
+        "\n\n其他常见原因：\n· 项目里还没有这个用户\n   Authentication → Users → Add user（勾选 Auto Confirm）\n· 项目地址或 anon key 填错（点「连接自检」能立刻看出来）");
+      $("#sbPass").value = pass;   // 失败时把密码留着，方便用户点「显示」逐字核对
     }
   },
 
@@ -3363,6 +3459,8 @@ const BindUI = {
     const pass = $("#sbPass").value;
     if (!cfg.email || !pass) return this.sbDiag("请填写邮箱和密码。");
     if (pass.length < 6) return this.sbDiag("密码太短，Supabase 要求至少 6 位。");
+    const pNotes = sbPwIssues(pass);
+    if (pNotes.length) return this.sbDiag("密码里有手机键盘容易带进来的字符，先改掉再注册：\n· " + pNotes.join("\n· "));
     this.sbDiag("正在注册…");
     try {
       SB.saveCfg(cfg);
@@ -3378,6 +3476,34 @@ const BindUI = {
     } catch(e){
       this.sbDiag("✗ 注册失败：" + (e.message || e));
     }
+  },
+
+  /* 「👁 显示 / 隐藏」密码：手机端肉眼核对密码的唯一办法 */
+  togglePass(){
+    const el = $("#sbPass"), btn = $("#sbEye");
+    if (!el) return;
+    const show = el.type === "password";
+    el.type = show ? "text" : "password";
+    if (btn) btn.textContent = show ? "🙈 隐藏" : "👁 显示";
+  },
+
+  /* 「复制提示信息」：手机上选中长文本很麻烦，一键复制后可以直接发给我 */
+  async copyDiag(){
+    const el = $("#sbDiag");
+    const txt = (el && el.textContent) || "";
+    if (!txt.trim()){ toast("还没有可复制的信息"); return; }
+    let ok = false;
+    try { await navigator.clipboard.writeText(txt); ok = true; } catch(e){}
+    if (!ok){
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = txt; ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.select();
+        ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+      } catch(e){}
+    }
+    toast(ok ? "已复制，可直接粘贴发给我" : "复制失败，请长按选中文字");
   },
 
   async sbOut(){
@@ -3399,6 +3525,9 @@ const BindUI = {
     if (!cfg.url || !cfg.anonKey) return this.sbDiag("请先填写项目地址和 anon key。");
     const lines = ["地址：" + cfg.url, ""];
     const H = { "apikey": cfg.anonKey, "Authorization": "Bearer " + (SB.session ? SB.session.access_token : cfg.anonKey) };
+
+    /* 本机存储：无痕模式会让「登录成功但一刷新就掉线」，先排除这一项 */
+    lines.push("· 本机存储：" + (sbStoreOk() ? "✓ 可写入" : "✗ 不可写（无痕/隐私模式？登录可以成功，但关掉页面就要重登）"));
 
     try {
       const r = await fetch(cfg.url + "/auth/v1/health", { headers: { "apikey": cfg.anonKey } });
