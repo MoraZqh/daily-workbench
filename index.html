@@ -890,7 +890,8 @@ code.k{background:#efece3;border-radius:5px;padding:1px 7px;font-size:12px;font-
       <div class="conn-actions">
         <button class="btn" id="sbLogin">登录</button>
         <button class="btn ghost" id="sbSignup">注册新账号</button>
-        <button class="btn ghost" id="sbCheck">连接自检</button>
+        <button class="btn ghost" id="sbNet">网络诊断</button>
+        <button class="btn ghost" id="sbCheck">表自检</button>
         <button class="btn ghost" id="sbCopy">复制提示信息</button>
         <button class="btn ghost" id="sbOut">退出登录</button>
       </div>
@@ -934,6 +935,21 @@ code.k{background:#efece3;border-radius:5px;padding:1px 7px;font-size:12px;font-
       <button class="btn ghost" id="bkClose">关闭</button>
     </div>
     <input type="file" id="bkFile" accept=".json" style="display:none">
+  </div>
+</div>
+
+<!-- 复制提示信息：一键复制被浏览器拦下时的手动兜底（微信内置浏览器常见） -->
+<div class="mask" id="copyMask">
+  <div class="modal">
+    <h2>手动复制</h2>
+    <p class="mh-sub">这台浏览器不让网页自动写剪贴板（微信内置浏览器最常见）。<br>
+      请在下面的框里<b>长按 → 全选 → 复制</b>，然后发给我。</p>
+    <textarea id="copyText" readonly spellcheck="false" style="width:100%;height:200px;box-sizing:border-box;border:1px solid var(--line2);border-radius:9px;padding:10px;font-size:12px;font-family:ui-monospace,Consolas,monospace;line-height:1.7;background:#fff;color:#4a443a"></textarea>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+      <button class="btn" id="copyAll">全选</button>
+      <button class="btn ghost" id="copyTry">再试一次自动复制</button>
+      <button class="btn ghost" id="copyClose">关闭</button>
+    </div>
   </div>
 </div>
 
@@ -1114,6 +1130,50 @@ function sbStoreOk(){
   } catch(e){ return false; }
 }
 
+/* 带超时的连通性探测 —— 手机端网络被拦时，fetch 会一直挂着不返回，
+   界面上看起来就是「点了没反应」。所以所有请求都必须有超时。
+   opt.noCors：探测与本站无关的域名时必须用它，否则会被 CORS 挡回来，
+   把「网络其实通」误判成「连不上」（opaque 响应拿不到状态码，能拿到就说明通了）。 */
+async function sbProbe(url, opt){
+  opt = opt || {};
+  const to = opt.ms || 8000;
+  const ctl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+  const timer = setTimeout(() => { if (ctl) ctl.abort(); }, to);
+  const init = { cache: "no-store" };
+  if (ctl) init.signal = ctl.signal;
+  if (opt.noCors) init.mode = "no-cors";
+  else if (opt.apikey) init.headers = { "apikey": opt.apikey };
+  const t0 = Date.now();
+  try {
+    const r = await fetch(url, init);
+    clearTimeout(timer);
+    const code = r.status ? "HTTP " + r.status + "，" : "";
+    return "✓ 通（" + code + (Date.now() - t0) + "ms）";
+  } catch(e){
+    clearTimeout(timer);
+    const m = String((e && e.message) || e);
+    if (/abort/i.test(m)) return "✗ " + Math.round(to / 1000) + " 秒没响应（被拦或极慢）";
+    return "✗ 连不上（" + m + "）";
+  }
+}
+/* 请求超时包装：把 fetch 永久挂着变成「15 秒后明确报错」 */
+function sbFetch(url, opt, ms){
+  const to = ms || 15000;
+  if (typeof AbortController === "undefined" || !opt) return fetch(url, opt);
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), to);
+  const o = Object.assign({}, opt, { signal: ctl.signal });
+  return fetch(url, o).then(
+    r => { clearTimeout(timer); return r; },
+    e => {
+      clearTimeout(timer);
+      if (/abort/i.test(String((e && e.message) || e)))
+        throw new Error("请求 " + Math.round(to / 1000) + " 秒没有响应 —— 多半是网络到不了 Supabase（手机端常见），换个网络再试");
+      throw e;
+    }
+  );
+}
+
 const SB = {
   cfg: null,       // { url, anonKey, email }
   session: null,   // { access_token, refresh_token, expires_at, email, user }
@@ -1165,12 +1225,15 @@ const SB = {
     if (!this.configured()) throw new Error("还没填 Supabase 地址");
     let res;
     try {
-      res = await fetch(this.base() + "/auth/v1/" + path, {
+      res = await sbFetch(this.base() + "/auth/v1/" + path, {
         method: "POST",
         headers: { "apikey": this.cfg.anonKey, "Content-Type": "application/json" },
         body: JSON.stringify(body)
       });
-    } catch(e){ throw new Error("连不上 Supabase，请检查地址与网络"); }
+    } catch(e){
+      if (/没有响应/.test(String(e.message || e))) throw e;
+      throw new Error("连不上 Supabase，请检查地址与网络");
+    }
     const txt = await res.text();
     let data = null;
     try { data = txt ? JSON.parse(txt) : null; } catch(e){ data = { msg: txt }; }
@@ -1226,11 +1289,14 @@ const SB = {
     if (opt.prefer) headers["Prefer"] = opt.prefer;
     let res;
     try {
-      res = await fetch(this.base() + "/rest/v1/" + path, {
+      res = await sbFetch(this.base() + "/rest/v1/" + path, {
         method, headers,
         body: opt.body ? JSON.stringify(opt.body) : undefined
       });
-    } catch(e){ throw new Error("网络连接失败，请检查网络后重试"); }
+    } catch(e){
+      if (/没有响应/.test(String(e.message || e))) throw e;
+      throw new Error("网络连接失败，请检查网络后重试");
+    }
     const txt = await res.text();
     if (!res.ok){
       let d = null; try { d = txt ? JSON.parse(txt) : null; } catch(e){}
@@ -3307,6 +3373,23 @@ const BindUI = {
     $("#sbSignup").addEventListener("click", () => this.sbSignup());
     $("#sbCheck").addEventListener("click", () => this.sbCheck());
     $("#sbOut").addEventListener("click", () => this.sbOut());
+    $("#sbEye").addEventListener("click", () => this.togglePass());
+    $("#sbCopy").addEventListener("click", () => this.copyDiag());
+    $("#sbNet").addEventListener("click", () => this.netCheck());
+    /* 手机上更容易发生「密码被键盘改了」，所以密码框回车直接登录 */
+    $("#sbPass").addEventListener("keydown", e => { if (e.key === "Enter") this.sbLogin(); });
+    $("#copyClose").addEventListener("click", () => $("#copyMask").classList.remove("on"));
+    $("#copyAll").addEventListener("click", () => {
+      const ta = $("#copyText");
+      ta.focus();
+      if (ta.setSelectionRange) ta.setSelectionRange(0, ta.value.length); else ta.select();
+    });
+    $("#copyTry").addEventListener("click", () => {
+      const ta = $("#copyText");
+      if (this.copySync(ta.value)){ toast("已复制，可直接粘贴发给我"); $("#copyMask").classList.remove("on"); }
+      else toast("还是被拦住了，请长按框内文字手动全选");
+    });
+    $("#copyMask").addEventListener("click", e => { if (e.target === $("#copyMask")) $("#copyMask").classList.remove("on"); });
     $("#bindMask").addEventListener("click", e => { if (e.target === $("#bindMask")) $("#bindMask").classList.remove("on"); });
   },
 
@@ -3487,23 +3570,46 @@ const BindUI = {
     if (btn) btn.textContent = show ? "🙈 隐藏" : "👁 显示";
   },
 
-  /* 「复制提示信息」：手机上选中长文本很麻烦，一键复制后可以直接发给我 */
-  async copyDiag(){
+  /* 「复制提示信息」
+     坑：微信内置浏览器 / 部分安卓 WebView 里 navigator.clipboard 不存在或直接拒绝，
+     而 iOS 又要求复制必须发生在用户点击的**同一个同步周期**内（一 await 就失效）。
+     所以顺序是：同步 execCommand → 异步 Clipboard API → 弹出可手动全选的文本框。 */
+  copyDiag(){
     const el = $("#sbDiag");
-    const txt = (el && el.textContent) || "";
-    if (!txt.trim()){ toast("还没有可复制的信息"); return; }
-    let ok = false;
-    try { await navigator.clipboard.writeText(txt); ok = true; } catch(e){}
-    if (!ok){
-      try {
-        const ta = document.createElement("textarea");
-        ta.value = txt; ta.style.position = "fixed"; ta.style.opacity = "0";
-        document.body.appendChild(ta); ta.select();
-        ok = document.execCommand("copy");
-        document.body.removeChild(ta);
-      } catch(e){}
+    const txt = ((el && el.textContent) || "").trim();
+    if (!txt){ toast("还没有可复制的信息"); return; }
+    if (this.copySync(txt)){ toast("已复制，可直接粘贴发给我"); return; }
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(
+        () => toast("已复制，可直接粘贴发给我"),
+        () => this.showCopyBox(txt)
+      );
+      return;
     }
-    toast(ok ? "已复制，可直接粘贴发给我" : "复制失败，请长按选中文字");
+    this.showCopyBox(txt);
+  },
+  copySync(txt){
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = txt;
+      ta.setAttribute("readonly", "");
+      ta.style.cssText = "position:fixed;top:0;left:0;width:2px;height:2px;opacity:0;border:0;padding:0";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      if (ta.setSelectionRange) ta.setSelectionRange(0, txt.length);
+      const done = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return !!done;
+    } catch(e){ return false; }
+  },
+  showCopyBox(txt){
+    const ta = $("#copyText");
+    if (!ta) return;
+    ta.value = txt;
+    $("#copyMask").classList.add("on");
+    setTimeout(() => { try { ta.focus(); ta.select(); } catch(e){} }, 60);
+    toast("自动复制被拦，请在框里长按全选");
   },
 
   async sbOut(){
@@ -3517,6 +3623,50 @@ const BindUI = {
     this.renderSbState();
     this.sbDiag("已退出登录，当前显示本机数据。云端数据仍在 Supabase 里，重新登录即可看到。");
     toast("已退出登录");
+  },
+
+  /* 网络诊断：一锤定音地区分「手机没网」「只有外网被拦」「网络其实没问题」
+     —— 手机端登录失败最常见的就是第一条，但光看报错分不清是哪一种。 */
+  async netCheck(){
+    const cfg = this.readCfg();
+    const L = [];
+    L.push("本机网络（浏览器自报）：" + (navigator.onLine ? "✓ 有网" : "✗ 无网（先检查手机流量/Wi-Fi）"));
+    L.push("当前打开方式：" + (/MicroMessenger/i.test(navigator.userAgent) ? "⚠ 微信内置浏览器（建议改用系统浏览器：右上角「…」→ 在浏览器打开）" : "✓ 系统浏览器"));
+    if (!cfg.url){
+      L.push("");
+      L.push("先填好上面的「项目地址」，再点一次网络诊断。");
+      this.sbDiag(L.join("\n"));
+      return;
+    }
+    L.push("");
+    L.push("正在探测（每项最多 8 秒）…");
+    this.sbDiag(L.join("\n"));
+
+    const r1 = await sbProbe(cfg.url + "/auth/v1/health", { apikey: cfg.anonKey, ms: 8000 });
+    L.push("· 到你的 Supabase：" + r1);
+    this.sbDiag(L.join("\n"));
+    const r2 = await sbProbe("https://www.baidu.com/favicon.ico", { noCors: true, ms: 8000 });
+    L.push("· 到国内站点（对照）：" + r2);
+    this.sbDiag(L.join("\n"));
+    const r3 = await sbProbe("https://morazqh.github.io/daily-workbench/", { noCors: true, ms: 8000 });
+    L.push("· 到 GitHub Pages：" + r3);
+
+    const sbOk = /^✓/.test(r1), cnOk = /^✓/.test(r2);
+    L.push("");
+    if (sbOk){
+      L.push("结论：网络是通的，问题不在路由器上 —— 直接再点一次「登录」；");
+      L.push("若仍失败，看报错里「这次实际发送的账号」，是凭据问题（邮箱/密码/用户是否存在）。");
+    } else if (cnOk){
+      L.push("结论：这台手机能上国内网，但到不了 Supabase —— 网络层被拦了（不是密码问题）。按顺序试：");
+      L.push("  ① 换网络：Wi-Fi ⇄ 移动数据 来回切一次（最常见，一换就好）");
+      L.push("  ② 关掉代理类设置：VPN / 加速器 / 广告拦截，以及 iPhone「设置 → Apple ID → iCloud → 私人转发」，Safari「设置 → 隐私 → 隐藏 IP 地址」");
+      L.push("  ③ 换浏览器：在系统浏览器（Safari / Chrome）里打开本页，别在微信里打开");
+      L.push("  ④ 三条都试完还是不行 → 说明你的网络到 supabase.co 这条路走不通，");
+      L.push("     改用「资料库」后端做云同步（国内直连）：跟我说一声「换成资料库同步」，我来配。");
+    } else {
+      L.push("结论：这台手机整体上不了网 / 浏览器被限制了网络访问，先解决手机网络本身。");
+    }
+    this.sbDiag(L.join("\n"));
   },
 
   /* 连接自检：不需要登录，逐张表探一次，把原始结果打出来 */
