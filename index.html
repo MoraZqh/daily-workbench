@@ -710,9 +710,12 @@ code.k{background:#efece3;border-radius:5px;padding:1px 7px;font-size:12px;font-
         </div>
 
         <div id="wdAddBox" style="margin-top:12px;padding:12px;border:1px dashed var(--line2);border-radius:12px">
+          <div id="wdEditBar" style="display:none;margin-bottom:10px;padding:8px 10px;border-radius:10px;background:#fdf4e3;color:#8a6a37;font-size:12px;line-height:1.7">
+            ✎ 正在修改：<b id="wdEditName"></b> —— 改完点「保存修改」，不改就点「取消」。
+          </div>
           <div class="form-row">
             <div class="field" style="flex:2"><label>名称</label><input type="text" id="wdName" placeholder="如：白色棉质衬衫" maxlength="30"></div>
-            <div class="field"><label>分类</label><select id="wdCategory"><option>上衣</option><option>下装</option><option>鞋履</option><option>配饰</option></select></div>
+            <div class="field"><label>分类</label><select id="wdCategory"><option>上衣</option><option>连衣裙</option><option>下装</option><option>外套</option><option>鞋履</option><option>配饰</option></select></div>
             <div class="field"><label>颜色</label><input type="text" id="wdColor" placeholder="白 / 藏青 白" maxlength="16"></div>
             <div class="field"><label>材质</label><input type="text" id="wdMaterial" placeholder="棉 / 羊毛" maxlength="12"></div>
             <div class="field"><label>风格（空格分隔）</label><input type="text" id="wdStyle" placeholder="通勤 简约" maxlength="24"></div>
@@ -728,6 +731,7 @@ code.k{background:#efece3;border-radius:5px;padding:1px 7px;font-size:12px;font-
             </div>
             <div class="field"><label>状态</label><select id="wdOwned"><option value="true">已购</option><option value="false">想买</option></select></div>
             <button class="btn" id="wdSave">加 入</button>
+            <button class="btn ghost" id="wdCancelEdit" style="display:none">取消修改</button>
           </div>
           <div id="wdPhotoPrevWrap" style="display:none;margin-top:8px"><img id="wdPhotoPrev" class="log-thumb" alt="预览"></div>
         </div>
@@ -2035,9 +2039,54 @@ function stDateText(d){
 /* 未购单品被推荐到第几次才提示「可以考虑入手」 */
 const ST_BUY_HINT = 5;
 
-/* 一套搭配的品类顺序；前三类是硬缺口（缺了就组不出一整套），配饰可选 */
-const ST_ALL_CATS = ["上衣", "下装", "鞋履", "配饰"];
-const ST_HARD_CATS = ["上衣", "下装", "鞋履"];
+/* 品类：连衣裙是「一体式」——一件顶「上衣 + 下装」，所以缺口判定要分两套。
+   硬缺口 = 缺了就组不成一整套；外套 / 配饰 都是可选层，缺了只作轻提示。 */
+const ST_ALL_CATS   = ["上衣", "连衣裙", "下装", "外套", "鞋履", "配饰"];   /* 全类目清单（供说明/校验用） */
+const ST_ONE_PIECE  = "连衣裙";
+const ST_HARD_SPLIT = ["上衣", "下装", "鞋履"];      /* 分体式必备：上衣 + 下装 + 鞋 */
+const ST_HARD_DRESS = ["连衣裙", "鞋履"];            /* 一体式必备：连衣裙 + 鞋 */
+const ST_SCOPE_SPLIT = ["上衣", "下装", "鞋履", "配饰"];
+const ST_SCOPE_DRESS = ["连衣裙", "鞋履", "配饰"];
+/* 外套属于可选层：可以录入、可以进搭配，但缺了不算缺口，所以不进缺口文案 */
+
+/* 这套里有没有连衣裙（有 → 走一体式判定，上衣/下装不再是缺口） */
+function stHasDress(set){ return (set || []).some(s => s && s.category === ST_ONE_PIECE); }
+/* 这套的必备类目 */
+function stHardCats(set){ return stHasDress(set) ? ST_HARD_DRESS : ST_HARD_SPLIT; }
+/* 这套还该留意哪些类目（一体式时不再提示「上衣 / 下装」） */
+function stCatScope(set){ return stHasDress(set) ? ST_SCOPE_DRESS : ST_SCOPE_SPLIT; }
+
+/* 试搭：把「想买的那件」临时放进这套。
+   同类目已有 → 替换那一件；缺这类 → 补进这套（跟在原来那件的位置上）；
+   连衣裙与「上衣 + 下装」互为一体式，切换时整组替换，不留「连衣裙 + 裤子」的怪组合：
+     · 试搭连衣裙 → 换掉整套上衣 + 下装；
+     · 试搭上衣/下装 → 换掉裙子，并从已购里补上配套的另一件，凑成完整分体套。
+   返回 { set, replaced }，replaced 是被换下来的单品数组（用于文案说明）。 */
+function stApplyTry(baseSet, trying, pool){
+  const set = (baseSet || []).slice();
+  if (!trying) return { set, replaced: [] };
+  if (trying.category === ST_ONE_PIECE){
+    const out = set.filter(s => s.category === ST_ONE_PIECE || s.category === "上衣" || s.category === "下装");
+    if (!out.length) return { set: set.concat([trying]), replaced: [] };
+    const at = Math.max(0, set.indexOf(out[0]));
+    const rest = set.filter(s => out.indexOf(s) < 0);
+    rest.splice(Math.min(at, rest.length), 0, trying);
+    return { set: rest, replaced: out };
+  }
+  const dress = set.filter(s => s.category === ST_ONE_PIECE)[0];
+  /* 试搭的是上衣/下装，而这套正靠裙子撑 → 换掉裙子，补上配套的另一件 */
+  if (dress && (trying.category === "上衣" || trying.category === "下装")){
+    const need = trying.category === "上衣" ? "下装" : "上衣";
+    const mate = (pool || []).filter(r => r.category === need && r !== dress)[0] || null;
+    const at = Math.max(0, set.indexOf(dress));
+    const rest = set.filter(s => s !== dress);
+    rest.splice.apply(rest, [Math.min(at, rest.length), 0].concat([trying], mate ? [mate] : []));
+    return { set: rest, replaced: [dress] };
+  }
+  const i = set.findIndex(s => s.category === trying.category);
+  if (i >= 0){ const out = set.slice(); out[i] = trying; return { set: out, replaced: [set[i]] }; }
+  return { set: set.concat([trying]), replaced: [] };
+}
 
 /* ---------- 穿搭模块：本机草稿 + 错误人话化 ----------
    铁律：用户敲进去的内容绝不允许「凭空消失」。
@@ -2071,6 +2120,7 @@ const Style = {
   weather: "",         /* 如 "多云 · 微凉" */
   scene: "通勤",
   pendingImg: null,
+  editId: null,         /* 正在修改的衣橱单品 id（null = 新增模式） */
   tryId: null,          /* 试搭中的想买单品 id（临时放进搭配，不写历史、不计数） */
   bpBaseline: null,    /* 上次由程序写入表单的内容指纹，用来判断用户有没有手改 */
 
@@ -2115,6 +2165,7 @@ const Style = {
     $("#wdTabOwned").addEventListener("click", () => this.setTab("owned"));
     $("#wdTabWant").addEventListener("click", () => this.setTab("want"));
     $("#wdSave").addEventListener("click", () => this.saveItem());
+    $("#wdCancelEdit").addEventListener("click", () => this.cancelEdit());
     $("#wdPhoto").addEventListener("click", () => $("#wdPhotoFile").click());
     $("#wdPhotoFile").addEventListener("change", async (e) => {
       const f = e.target.files && e.target.files[0];
@@ -2124,6 +2175,7 @@ const Style = {
       if (f.size > 20 * 1024 * 1024) { toast("图片太大（超过 20MB）"); return; }
       try {
         this.pendingImg = await OCCompress(f);
+        if ($("#wdImgPath")) $("#wdImgPath").value = "";   /* 二选一：新上传的图优先，清掉旧路径 */
         $("#wdPhotoPrev").src = this.pendingImg;
         $("#wdPhotoPrevWrap").style.display = "";
         toast("图片已就绪，随单品一起保存");
@@ -2224,7 +2276,8 @@ const Style = {
       box.innerHTML = '<div class="empty" style="padding:14px 4px;text-align:left">' +
         '<div class="zh">推荐会出现在这里</div>' +
         '<div style="line-height:2;margin-top:4px">' +
-        '还差一步：先到下面<b>「衣橱」</b>加几件<b>已购</b>单品——<b>上衣 / 下装 / 鞋履</b>各一件就够（配饰可选）。<br>' +
+        '还差一步：先到下面<b>「衣橱」</b>加几件<b>已购</b>单品——<b>上衣 + 下装 + 鞋</b>各一件，' +
+        '或者一条<b>连衣裙</b> + 一双<b>鞋</b>（裙子一件顶上衣加下装）。外套、配饰可选。<br>' +
         '加完回到这张卡，点一下天气（晴 / 雨 × 热 / 冷）和场景，上面立刻出一整套：单品卡片 + <b>搭配说明</b> + 搭配小提示。<br>' +
         '想让单品显示真实图片：把图片放进网站仓库的 <b>assets/wardrobe/</b>，再在单品里填路径（如 assets/wardrobe/白衬衫.jpg）。</div></div>';
       return;
@@ -2238,8 +2291,14 @@ const Style = {
       const pool = inScene.filter(r => r.category === cat);
       return pool.length ? pool[Math.floor(pool.length / 2) % pool.length] : null; /* 稳定取中位，避免每次刷新换一套 */
     };
-    const top = pick("上衣"), bottom = pick("下装"), shoe = pick("鞋履"), acc = pick("配饰");
-    const baseSet = [top, bottom, shoe, acc].filter(Boolean);
+    const top = pick("上衣"), bottom = pick("下装");
+    const dress = pick(ST_ONE_PIECE);
+    const coat = pick("外套"), shoe = pick("鞋履"), acc = pick("配饰");
+    /* 一体式 vs 分体式：有连衣裙时——天热/舒适优先裙子；微凉/冷且上衣下装都齐就叠穿分体；
+       分体不齐（缺上衣或下装）则有裙子就走裙子，不硬凑半套。 */
+    const splitOk = !!(top && bottom);
+    const useDress = !!dress && (!splitOk || temp === "热" || temp === "舒适");
+    const baseSet = (useDress ? [dress, coat, shoe, acc] : [top, bottom, coat, shoe, acc]).filter(Boolean);
     if (!baseSet.length){
       box.innerHTML = '<div class="empty" style="padding:18px 0"><div class="zh">衣橱里还没有匹配的单品</div>换个场景试试，或把「风格」标签留空（留空=百搭）</div>';
       return;
@@ -2249,25 +2308,22 @@ const Style = {
 
     /* ---------- 试搭：把想买的那件临时放进这套 ----------
        只影响这一张卡的显示：不写推荐历史、不给 buyCount 计数。
-       同类目已有 → 替换那一件；没有这一类 → 补进这套。 */
+       同类目已有 → 替换那一件；没有这一类 → 补进这套；
+       连衣裙与「上衣+下装」互为一体式，切换时整组替换，不留「裙子 + 裤子」的怪组合。 */
     const trying = (this.tryId && want.filter(r => String(r._id) === String(this.tryId))[0]) || null;
     if (this.tryId && !trying) this.tryId = null;      /* 单品被删或改成已购 → 自动退出试搭 */
-    const set = baseSet.slice();
-    let tryReplaced = null;
-    if (trying){
-      const i = set.findIndex(s => s.category === trying.category);
-      if (i >= 0){ tryReplaced = set[i]; set[i] = trying; }
-      else set.push(trying);
-    }
+    const tryOut = stApplyTry(baseSet, trying, inScene);
+    const set = tryOut.set, tryReplaced = tryOut.replaced;
+    const tryRepTxt = tryReplaced.map(s => s.name || s.category || "单品").join(" + ");
 
     /* ---------- 缺口：这套里还缺哪一类 ---------- */
-    const missCats = ST_ALL_CATS.filter(c => !set.some(s => s.category === c));
-    const hardMiss = missCats.filter(c => ST_HARD_CATS.indexOf(c) >= 0);
+    const missCats = stCatScope(set).filter(c => !set.some(s => s.category === c));
+    const hardMiss = missCats.filter(c => stHardCats(set).indexOf(c) >= 0);
 
     /* ---------- 未购推荐：优先补硬缺口，其次补配饰，最后同场景想买 ---------- */
     const missing = want.filter(r => r.category && missCats.indexOf(r.category) >= 0)[0];
     const picked = trying ? null : (missing || (want.length ? want.filter(r => stSeasonFit(r, temp))[0] : null));
-    const pickFillsGap = !!(picked && picked.category && ST_HARD_CATS.indexOf(picked.category) >= 0 &&
+    const pickFillsGap = !!(picked && picked.category && stHardCats(set).indexOf(picked.category) >= 0 &&
       !baseSet.some(s => s.category === picked.category));
 
     const reasons = [];
@@ -2275,10 +2331,18 @@ const Style = {
     if (cond === "雨") reasons.push("雨天优先防滑鞋底，浅色裤子容易溅泥");
     if (temp === "热") reasons.push("高温天选透气材质，短袖/阔腿保持通风");
     if (temp === "冷") reasons.push("低温天叠穿，内薄外厚更好调节");
-    if (top && bottom && stIsNeutral(bottom.color) && !stIsNeutral(top.color)) reasons.push("中性色下装打底，" + esc(top.color) + "色上衣做亮点，繁简平衡");
+    if (useDress) reasons.push("天" + temp + "，连衣裙单穿刚好——一件顶「上衣 + 下装」，省事也不闷");
+    if (!useDress && top && bottom && stIsNeutral(bottom.color) && !stIsNeutral(top.color)) reasons.push("中性色下装打底，" + esc(top.color) + "色上衣做亮点，繁简平衡");
     const tips = [];
-    if (shape === "H形" && top) tips.push(top.name + " 下摆塞进裤腰，腰线立起来");
-    if (shape === "梨形" && bottom) tips.push("包/鞋与下装同色系，视线连贯更显高");
+    if (useDress){
+      if (shape === "H形") tips.push("裙上系一条细腰带，腰线立刻出来");
+      else if (shape === "梨形") tips.push("选 A 字或伞摆裙，避开紧身包臀");
+      else if (shape === "苹果形") tips.push("挑高腰线 + V 领的裙型，腰腹更利落");
+      tips.push("备一件薄外搭（开衫 / 小西装），空调房和早晚温差都稳");
+    } else {
+      if (shape === "H形" && top) tips.push(top.name + " 下摆塞进裤腰，腰线立起来");
+      if (shape === "梨形" && bottom) tips.push("包/鞋与下装同色系，视线连贯更显高");
+    }
     if (shoe) tips.push("鞋和配饰控制在两个颜色以内，整体不散");
 
     /* ---------- 渲染：日期 + 天气摘要 → 试搭条 → 搭配（已购真图）→ 缺口 → 想买文字卡 → 说明 ---------- */
@@ -2292,8 +2356,8 @@ const Style = {
       '</div>' +
       (trying ?
         '<div class="st-tryn">试搭中：现在看的是「' + esc(trying.name || "想买单品") + '」放进这套之后的样子' +
-        (tryReplaced
-          ? '（替代「' + esc(tryReplaced.name || "") + '」）'
+        (tryReplaced.length
+          ? '（替代「' + esc(tryRepTxt) + '」）'
           : '（补上这套缺的「' + esc(trying.category || "") + '」）') +
         '。试搭不写入推荐历史，也不给 buyCount 计数。</div>' : "") +
       '<div class="st-set">' +
@@ -2305,7 +2369,7 @@ const Style = {
           : '<div class="noim">' + esc(s.category || "单品") + ' · 待补图</div>') +
         '<div class="tx"><div class="nm">' + esc(s.name || "未命名") + '</div>' +
         '<div class="mt">' + esc(s.category || "") + " · " + esc(s.color || "—") + '</div></div>' +
-        ((trying && s === trying && tryReplaced) ? '<div class="rep">替代「' + esc(tryReplaced.name || "") + '」</div>' : "") +
+        ((trying && s === trying && tryReplaced.length) ? '<div class="rep">替代「' + esc(tryRepTxt) + '」</div>' : "") +
         '</div>').join("") +
       '</div>' +
       ((gapTxt && !picked) ?
@@ -2388,9 +2452,59 @@ const Style = {
     $("#wdTabWant").classList.toggle("on", t === "want");
     this.renderWardrobe();
   },
+  /* 清空表单并退出编辑态（新增与修改共用同一张表单） */
+  resetWdForm(){
+    this.editId = null; this.pendingImg = null;
+    ["#wdName","#wdUrl","#wdColor","#wdMaterial","#wdStyle","#wdImgPath"].forEach(k => {
+      const el = $(k); if (el) el.value = "";
+    });
+    const pv = $("#wdPhotoPrevWrap"); if (pv) pv.style.display = "none";
+    const bar = $("#wdEditBar"); if (bar) bar.style.display = "none";
+    const btn = $("#wdSave"); if (btn) btn.textContent = "加 入";
+    const cancel = $("#wdCancelEdit"); if (cancel) cancel.style.display = "none";
+    const file = $("#wdPhotoFile"); if (file && file.value !== undefined) file.value = "";
+  },
+  /* 把一件已录入的单品载入表单 → 进入修改态 */
+  startEdit(id){
+    const rows = (Data.cache.wardrobe && Data.cache.wardrobe.rows) || [];
+    const r = rows.filter(x => String(x._id) === String(id))[0];
+    if (!r){ toast("这件单品已经不在列表里了"); return; }
+    const img = r.image || "";
+    const isData = /^data:/.test(img);
+    this.editId = id;
+    this.pendingImg = isData ? img : null;
+    const setV = (k, v) => { const el = $(k); if (el) el.value = v; };
+    setV("#wdName", r.name || "");
+    setV("#wdColor", r.color || "");
+    setV("#wdMaterial", r.material || "");
+    setV("#wdStyle", r.styleTags || "");
+    setV("#wdUrl", r.productUrl || "");
+    setV("#wdImgPath", isData ? "" : img);
+    const cat = $("#wdCategory");
+    if (cat){ cat.value = r.category || "上衣"; if (cat.value !== (r.category || "上衣")) cat.value = "上衣"; }
+    const os = $("#wdOwned"); if (os) os.value = (r.owned === "true" || r.owned === true) ? "true" : "false";
+    const sn = $("#wdSeason"); if (sn) sn.value = r.season || "四季";
+    const pv = $("#wdPhotoPrevWrap");
+    if (this.pendingImg){
+      const p = $("#wdPhotoPrev"); if (p) p.src = this.pendingImg;
+      if (pv) pv.style.display = "";
+    } else if (pv) pv.style.display = "none";
+    const bar = $("#wdEditBar"); if (bar) bar.style.display = "";
+    const nm = $("#wdEditName"); if (nm) nm.textContent = r.name || "这件单品";
+    const btn = $("#wdSave"); if (btn) btn.textContent = "保存修改";
+    const cancel = $("#wdCancelEdit"); if (cancel) cancel.style.display = "";
+    const box = $("#wdAddBox");
+    if (box && box.scrollIntoView){ try { box.scrollIntoView({ behavior: "smooth", block: "center" }); } catch(e){} }
+    toast("已载入「" + (r.name || "这件单品") + "」，改完点「保存修改」");
+  },
+  cancelEdit(){
+    if (!this.editId) return;
+    this.resetWdForm();
+    toast("已取消修改，表单已清空");
+  },
   async saveItem(){
     const name = $("#wdName").value.trim();
-    if (!name){ toast("给单品起个名字"); return; }
+    if (!name){ toast(this.editId ? "名称不能空着" : "给单品起个名字"); return; }
     /* 图片二选一：填了「图片路径」就用路径（指向仓库 assets/wardrobe/），否则用上传的实物照（base64） */
     const imgPath = $("#wdImgPath") ? $("#wdImgPath").value.trim() : "";
     const props = {
@@ -2401,18 +2515,20 @@ const Style = {
       color: $("#wdColor").value.trim(),
       material: $("#wdMaterial").value.trim(),
       owned: $("#wdOwned").value,
-      buyCount: "0",
       styleTags: $("#wdStyle").value.trim(),
       season: $("#wdSeason").value,
       note: ""
     };
+    const id = this.editId;
+    /* 新单品 buyCount 从 0 起；修改时**不带这个字段**，原计数与推荐历史都不受影响 */
+    if (!id) props.buyCount = "0";
     try {
-      await Data.add("wardrobe", props);
-      $("#wdName").value = ""; $("#wdUrl").value = ""; $("#wdColor").value = "";
-      $("#wdMaterial").value = ""; $("#wdStyle").value = ""; if ($("#wdImgPath")) $("#wdImgPath").value = "";
-      $("#wdPhotoPrevWrap").style.display = "none"; this.pendingImg = null;
-      toast(props.owned === "true" ? "已加入衣橱" : "已加入想买清单");
-    } catch(e){ toast("保存失败：" + (e.message||e)); }
+      if (id) await Data.update("wardrobe", id, props);
+      else await Data.add("wardrobe", props);
+      this.resetWdForm();
+      toast(id ? "修改已保存（推荐次数不受影响）"
+               : (props.owned === "true" ? "已加入衣橱" : "已加入想买清单"));
+    } catch(e){ toast((id ? "修改失败：" : "保存失败：") + (e.message||e)); }
   },
   renderWardrobe(){
     const c = Data.cache.wardrobe;
@@ -2445,13 +2561,18 @@ const Style = {
           (r.productUrl ? ' · <a href="' + esc(r.productUrl) + '" target="_blank" rel="noopener" style="color:var(--clay)">看商品 ↗</a>' : "") + '</div>' +
           '<button class="icon-btn" data-wd-try="' + esc(r._id) + '" style="margin-top:6px">' +
           (String(this.tryId) === String(r._id) ? "试搭中 ✓" : "试搭一下") + '</button>' : "") +
-        '<button class="icon-btn" data-wd-del="' + r._id + '" style="margin-top:6px">✕ 移除</button>' +
+        '<div style="display:flex;gap:6px;margin-top:6px">' +
+        '<button class="icon-btn" data-wd-edit="' + esc(r._id) + '" style="width:auto;flex:1;padding:0 6px">✎ 修改</button>' +
+        '<button class="icon-btn" data-wd-del="' + r._id + '" style="width:auto;flex:1;padding:0 6px">✕ 移除</button>' +
+        '</div>' +
         '</div></div>').join("") + '</div>';
     $$("#wdBox [data-wd-del]").forEach(b => b.addEventListener("click", async () => {
       if (!confirm("从衣橱移除这件单品？")) return;
+      if (String(this.editId) === String(b.dataset.wdDel)) this.resetWdForm();   /* 正在改的那件被删 → 退出编辑态 */
       try { await Data.remove("wardrobe", b.dataset.wdDel); toast("已移除"); }
       catch(e){ toast("删除失败：" + (e.message||e)); }
     }));
+    $$("#wdBox [data-wd-edit]").forEach(b => b.addEventListener("click", () => this.startEdit(b.dataset.wdEdit)));
     $$("#wdBox [data-wd-try]").forEach(b => b.addEventListener("click", () => this.startTry(b.dataset.wdTry)));
   },
 
