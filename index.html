@@ -365,6 +365,8 @@ h1.pt{font-family:var(--serif);font-size:28px;font-weight:600;letter-spacing:1px
 .st-date{font-family:var(--serif);font-size:15px;font-weight:600;letter-spacing:.5px}
 .st-tag{font-size:11.5px;padding:2px 10px;border-radius:99px;background:#efece3;color:#6b6558}
 .st-tag.wx{background:#e3ecf0;color:var(--sky)}
+.st-tag.rec{background:#e9e3f0;color:#6f5b86}
+.st-item .mb{font-size:10.5px;color:#9a6b2f;margin-top:2px}
 .st-set{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
 .st-item{position:relative;border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:#fff}
 .st-item img{width:100%;height:118px;object-fit:cover;display:block;background:#f2efe6}
@@ -728,6 +730,15 @@ code.k{background:#efece3;border-radius:5px;padding:1px 7px;font-size:12px;font-
             <div class="field"><label>季节</label><select id="wdSeason"><option>四季</option><option>春秋</option><option>夏</option><option>冬</option><option>春秋冬</option></select></div>
           </div>
           <div class="form-row" style="margin-top:10px">
+            <div class="field"><label>厚薄 <span style="color:var(--soft)">（1 薄 → 5 厚）</span></label><select id="wdWarm"><option value="">自动判断</option><option value="1">1 很薄（薄纱 / 雪纺）</option><option value="2">2 偏薄（衬衫 / 亚麻）</option><option value="3">3 适中（棉 / 牛仔）</option><option value="4">4 偏厚（针织 / 毛呢）</option><option value="5">5 很厚（羽绒 / 加绒）</option></select></div>
+            <div class="field"><label>版型</label><select id="wdFit"><option value="">自动判断</option><option value="宽松">宽松</option><option value="合身">合身</option><option value="修身">修身</option></select></div>
+            <div class="field"><label>正式度</label><select id="wdFormal"><option value="">自动判断</option><option value="休闲">休闲</option><option value="半正式">半正式</option><option value="正式">正式</option></select></div>
+          </div>
+          <div style="margin-top:6px;font-size:12px;color:var(--soft);line-height:1.8">
+            这三项决定「今天这套算不算合适」：<b>厚薄</b>卡温度（冷天不会给你推短袖），<b>版型</b>、<b>正式度</b>决定它跟谁搭。
+            留「自动判断」让系统按材质 / 名称推断，拿不准再手动点。保存后会写进备注，随时可改。
+          </div>
+          <div class="form-row" style="margin-top:10px">
             <div class="field" style="flex:2"><label>商品链接（想买时填）</label><input type="text" id="wdUrl" placeholder="https://… 或搜索链接" maxlength="300"></div>
             <div class="field" style="flex:2"><label>图片路径（可选）</label><input type="text" id="wdImgPath" placeholder="assets/wardrobe/白衬衫.jpg" maxlength="120"></div>
             <div class="field" style="flex:0 0 auto;align-items:flex-start">
@@ -740,6 +751,26 @@ code.k{background:#efece3;border-radius:5px;padding:1px 7px;font-size:12px;font-
             <button class="btn ghost" id="wdCancelEdit" style="display:none">取消修改</button>
           </div>
           <div id="wdPhotoPrevWrap" style="display:none;margin-top:8px"><img id="wdPhotoPrev" class="log-thumb" alt="预览"></div>
+        </div>
+
+        <div style="margin-top:12px;padding:12px;border:1px solid var(--line2);border-radius:12px;background:#faf8f2">
+          <div style="font-size:12.5px;font-weight:600;margin-bottom:6px">🪄 让 AI 帮你把衣橱读一遍</div>
+          <div style="font-size:11.5px;color:var(--soft);line-height:1.8;margin-bottom:8px">
+            把衣橱清单复制给 AI：AI 看图或看名称，补全<b>名称 / 品类 / 颜色 / 材质 / 厚薄 / 版型 / 正式度</b>，
+            再把结果粘回来——按 id 覆盖更新，<b>不会多出重复单品</b>，推荐次数也不受影响。
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn ghost" id="wdCopyAI">📋 复制衣橱清单给 AI</button>
+            <button class="btn ghost" id="wdPasteAI">📥 应用 AI 优化结果</button>
+          </div>
+          <div id="wdAiBox" style="display:none;margin-top:10px">
+            <textarea id="wdAiText" placeholder="把 AI 返回的 JSON 粘在这里，然后点「确认应用」" style="width:100%;height:120px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:1.6;padding:8px;border:1px solid var(--line2);border-radius:8px;box-sizing:border-box"></textarea>
+            <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+              <button class="btn" id="wdAiApply">确认应用</button>
+              <button class="btn ghost" id="wdAiCancel">取消</button>
+              <span id="wdAiHint" style="font-size:11.5px;color:var(--soft)"></span>
+            </div>
+          </div>
         </div>
 
         <div class="chips" id="wdChips" style="margin-top:12px"></div>
@@ -2013,14 +2044,446 @@ function stShapeOf(p){
   if (w <= b * 0.75 && Math.abs(b - h) < 5) return "沙漏";
   return "H形";
 }
-/* 季节是否匹配当前体感 */
-function stSeasonFit(item, temp){
-  const s = (item.season || "四季").trim() || "四季";
-  if (s === "四季") return true;
-  if (temp === "热") return /夏/.test(s);
-  if (temp === "冷") return /冬/.test(s);
-  /* 舒适 / 微凉：春秋为主，冬装可叠穿，夏装单穿略凉 */
-  return /春|秋|冬/.test(s);
+/* ============================================================
+   推荐引擎 v2：温度带 → 兼容规则 → 搭配配方 → 逐槽打分
+   ------------------------------------------------------------
+   旧逻辑 `pool[Math.floor(n/2)]` 是「取池子中间那件」——跟天气、颜色、材质
+   全无关系，所以冷天会推短袖、汉服会被配上西装外套。这里换成三道闸：
+     ① 温度带：按体感算出「今天能穿多厚」，厚薄不匹配的单品直接出局；
+     ② 兼容规则：一体式（连衣裙 / 套装 / 汉服）不叠现代外套、外套最多一件、
+                热天无厚件、冷天无短袖凉鞋；
+     ③ 搭配配方：把当季流行公式写成「槽位表」，再从衣橱里挑最贴合的单品填槽，
+                逐槽打分、总分最高者胜出——这就是「照着网上的公式，
+                从你衣柜里找相似的那几件」。
+   ============================================================ */
+
+/* ---------- ① 单品元数据：厚薄 / 版型 / 正式度 / 是否形制 ----------
+   手填优先：note 里带「厚4 修身 休闲」这样的词就以此为准；
+   没填则从「类目 + 名称 + 材质 + 季节」推断，老数据不重录也能用。 */
+const ST_MAT_WARM = [
+  [/羽绒|皮毛|羊羔绒|摇粒绒|棉服|雪地/, 5],
+  [/羊绒|羊毛|毛呢|呢子|灯芯绒|加绒|针织|毛衣|卫衣|绒/, 4],
+  /* 细软料要排在「棉 / 衬衫」前面：否则棉麻、亚麻衬衫会被当成厚料 */
+  [/棉麻|亚麻|苎麻|雪纺|真丝|丝绸|天丝|莫代尔|薄纱/, 2],
+  [/蕾丝|网纱|冰丝|纱/, 1],
+  /* 衬衫本身是「一年四季打底」的中等厚度，只有亚麻 / 真丝衬衫才算薄（上面那条先命中） */
+  [/牛仔|帆布|棉|涤纶|西服|西装|皮革|皮|雪尼尔|毛线|衬衫/, 3]
+];
+const ST_CAT_WARM = { "上衣":3, "下装":3, "连衣裙":2, "套装":3, "外套":4, "鞋履":3, "配饰":0 };
+const ST_HANFU_RE      = /汉服|袄裙|马面|齐胸|明制|宋制|唐制|圆领袍|直裾|曲裾|褙子|大袖|披风|斗篷|马褂|旗装|襦裙|上襦|下裙|比甲|形制/;
+const ST_HANFU_COAT_RE = /披风|大袖衫|褙子|斗篷|比甲|开衫|马甲|氅/;
+const ST_SHORT_RE      = /短袖|无袖|吊带|背心|短裤|短裙|凉鞋|拖鞋|薄款|冰丝/;
+
+function stText(r){ r = r || {}; return ((r.name || "") + " " + (r.material || "") + " " + (r.note || "")).trim(); }
+function stHas(txt, re){ return re.test(txt || ""); }
+
+function stMeta(r){
+  r = r || {};
+  const cat = r.category || "", txt = stText(r), note = String(r.note || "");
+  let w;
+  if (cat === "配饰") w = 0;
+  else if (cat === "鞋履"){
+    /* 鞋按「能不能御寒」分三档：凉鞋 1 / 单鞋板鞋皮鞋 3 / 靴 4 / 雪地靴 5。
+       注意别把「小白鞋」这类板鞋当薄鞋——它一年三季都能穿。 */
+    if (stHas(txt, /凉鞋|拖鞋|人字拖/)) w = 1;
+    else if (stHas(txt, /雪地|加绒|绒里|棉靴/)) w = 5;
+    else if (stHas(txt, /靴/)) w = 4;
+    else w = 3;
+  }
+  else if (cat === "外套"){
+    if (stHas(txt, /羽绒|棉服|皮毛|羊羔绒|摇粒绒/)) w = 5;
+    else if (stHas(txt, /大衣|毛呢|呢子|羊绒|羊毛|加绒|棉/)) w = 4;
+    else w = 3;                                  /* 风衣 / 夹克 / 皮衣 / 西装 默认初秋厚度 */
+    if (stHas(txt, /开衫|薄|防晒|轻薄|针织/)) w = Math.min(w, 3);
+  }
+  else {
+    w = ST_CAT_WARM[cat] != null ? ST_CAT_WARM[cat] : 3;
+    let hit = false;
+    ST_MAT_WARM.forEach(p => { if (!hit && stHas(txt, p[0])){ w = p[1]; hit = true; } });
+    if (stHas(txt, ST_SHORT_RE)) w -= 1;
+    if (stHas(txt, /高领|加厚|保暖|加绒|厚实/)) w += 1;
+    const s = String(r.season || "").trim();
+    if (s && /冬/.test(s) && !/春秋|夏/.test(s)) w += 1;
+    if (s === "夏") w -= 1;
+  }
+  const mu = note.match(/厚([1-5])/);
+  if (mu) w = +mu[1];
+  if (cat !== "配饰") w = Math.max(1, Math.min(5, w));
+
+  /* 版型：宽松 / 合身 / 修身 */
+  let fit = "合身";
+  if (stHas(txt, /oversize|廓形|宽松|落肩|阔版|大码|慵懒|肥/i)) fit = "宽松";
+  else if (stHas(txt, /修身|紧身|贴身|收腰|弹力/)) fit = "修身";
+  else if (cat === "下装" && stHas(txt, /阔腿|直筒|伞裙|a字|微喇|百褶/i)) fit = "宽松";
+  if (stHas(note, /宽松|oversize|廓形/i)) fit = "宽松";
+  else if (stHas(note, /修身|紧身/)) fit = "修身";
+  else if (stHas(note, /合身/)) fit = "合身";
+
+  /* 正式度：正式 / 半正式 / 休闲 */
+  let formal = "休闲";
+  if (stHas(txt, /西装|西服|西裤|衬衫|乐福|牛津|大衣|风衣|真丝|高跟鞋|铅笔裙|包臀/)) formal = "正式";
+  else if (stHas(txt, /针织|毛衣|半裙|伞裙|直筒|切尔西|皮鞋|马甲|开衫/)) formal = "半正式";
+  if (stHas(note, /半正式/)) formal = "半正式";
+  else if (stHas(note, /正式/)) formal = "正式";
+  else if (stHas(note, /休闲/)) formal = "休闲";
+
+  return {
+    warmth: w, fit: fit, formal: formal,
+    hanfu: stHas(txt, ST_HANFU_RE),
+    coatLike: cat === "外套" || stHas(txt, /开衫|马甲|披风|大袖/),
+    neutral: stIsNeutral(r.color)
+  };
+}
+/* 卡片上显示的那行元数据 */
+function stMetaTxt(r){
+  const m = stMeta(r);
+  if ((r && r.category) === "配饰") return m.fit + " · " + m.formal;
+  return "厚" + m.warmth + " · " + m.fit + " · " + m.formal;
+}
+function stIsHanfu(r){ return stMeta(r).hanfu || (r && r.category === "套装"); }
+
+/* note 里那三个手填词的拆装（表单的「厚薄 / 版型 / 正式度」快选写的就是它） */
+function stNoteParts(note){
+  const n = String(note || "");
+  const w = (n.match(/厚([1-5])/) || [])[1] || "";
+  const fit = /宽松|oversize|廓形/i.test(n) ? "宽松" : (/修身|紧身/.test(n) ? "修身" : (/合身/.test(n) ? "合身" : ""));
+  const formal = /半正式/.test(n) ? "半正式" : (/正式/.test(n) ? "正式" : (/休闲/.test(n) ? "休闲" : ""));
+  const rest = n
+    .replace(/厚[1-5]/g, "")
+    .replace(/oversize|廓形|宽松|落肩/gi, "")
+    .replace(/修身|紧身|合身/g, "")
+    .replace(/半正式|正式|休闲/g, "")
+    .replace(/\s+/g, " ").trim();
+  return { w: w, fit: fit, formal: formal, rest: rest };
+}
+function stNoteBuild(w, fit, formal, rest){
+  const parts = [];
+  if (w) parts.push("厚" + w);
+  if (fit) parts.push(fit);
+  if (formal) parts.push(formal);
+  if (rest) parts.push(String(rest).trim());
+  return parts.join(" ");
+}
+
+/* ---------- ② 温度带：由体感推出「今天能穿多厚」 ----------
+   厚薄分 1–5 档：1 薄纱 / 2 衬衫雪纺 / 3 棉牛仔 / 4 针织毛呢 / 5 羽绒加绒。
+   每档温度带规定每类目可穿的档位区间，越界的单品直接不进候选。 */
+const ST_BANDS = {
+  "热":   { range:"≥28°",   upW:[1,3], downW:[1,3], dressW:[1,3], coatW:[1,2], shoeW:[1,3], coat:"none",
+            label:"透气轻薄", tip:"短袖 / 薄裙 / 单鞋，别把厚料往身上堆（厚薄 4 以上的直接不推荐）" },
+  "舒适": { range:"22–27°", upW:[2,3], downW:[2,3], dressW:[2,3], coatW:[2,3], shoeW:[2,4], coat:"thin",
+            label:"长袖或薄外搭", tip:"长袖为主，早晚备一件薄外套" },
+  "微凉": { range:"16–21°", upW:[3,4], downW:[3,4], dressW:[2,4], coatW:[3,4], shoeW:[3,4], coat:"need",
+            label:"要一件外套", tip:"内薄外厚，一件薄外套压住早晚温差" },
+  "冷":   { range:"≤15°",   upW:[3,5], downW:[3,5], dressW:[3,5], coatW:[4,5], shoeW:[4,5], coat:"must",
+            label:"厚外套 + 保暖内搭", tip:"毛衣打底 + 大衣 / 羽绒，鞋换成靴子" }
+};
+function stBand(temp){ return ST_BANDS[temp] || ST_BANDS["舒适"]; }
+function stRoleOf(cat){
+  if (cat === "外套") return "coat";
+  if (cat === "鞋履") return "shoe";
+  if (cat === "配饰") return "acc";
+  if (cat === "下装") return "down";
+  if (cat === "上衣") return "up";
+  return "dress";                       /* 连衣裙 / 套装 / 一体式 */
+}
+function stBandRange(band, role){
+  if (role === "coat")  return band.coatW;
+  if (role === "shoe")  return band.shoeW;
+  if (role === "down")  return band.downW;
+  if (role === "dress") return band.dressW;
+  return band.upW;
+}
+/* 厚薄闸门：这一件今天穿得住吗（pad 用于「松一档」的折中模式） */
+function stBandOk(r, band, role, pad){
+  role = role || stRoleOf((r || {}).category);
+  if (role === "acc") return true;
+  const m = stMeta(r), rg = stBandRange(band, role), p = pad || 0;
+  if (role === "coat" && band.coat === "none" && m.warmth > rg[1] + p) return false;
+  return m.warmth >= rg[0] - p && m.warmth <= rg[1] + p;
+}
+/* 兼容旧接口（技能脚本与测试仍在用这个名字）：季节 + 温度带双闸 */
+function stSeasonFit(item, temp){ return stBandOk(item, stBand(temp), stRoleOf((item || {}).category)); }
+
+/* ---------- 配色：色系归并，判断两件是不是「同一挂」 ---------- */
+const ST_COLOR_FAM = [
+  [/红|酒红|砖红|枣红|玫|珊瑚/, "红"],
+  [/粉|藕|裸粉/, "粉"],
+  [/橙|橘|驼|咖|棕|焦糖|卡其|燕麦|奶茶/, "棕"],
+  [/黄|姜|鹅黄|柠檬/, "黄"],
+  [/绿|橄榄|军绿|鼠尾草|薄荷/, "绿"],
+  [/蓝|藏青|牛仔|雾霾蓝|天蓝/, "蓝"],
+  [/紫|香芋|葡萄/, "紫"],
+  [/黑|深灰|炭/, "黑"],
+  [/白|米白|奶白|象牙|月白/, "白"],
+  [/灰|银/, "灰"],
+  [/米|杏|裸/, "米"]
+];
+function stColorFam(c){
+  c = String(c || "").trim();
+  if (!c) return "";
+  for (let i = 0; i < ST_COLOR_FAM.length; i++){ if (ST_COLOR_FAM[i][0].test(c)) return ST_COLOR_FAM[i][1]; }
+  return "";
+}
+function stSameColorFam(a, b){ const fa = stColorFam(a); return !!fa && fa === stColorFam(b); }
+
+/* ---------- 身型加分：让「适合你的那几件」排到前面 ---------- */
+function stShapeBonus(r, shape){
+  const txt = stText(r), cat = r.category || "";
+  let s = 0;
+  if (shape === "梨形"){
+    if (cat === "下装" && (stIsNeutral(r.color) || stHas(txt, /a字|直筒|阔腿|伞/i))) s += 6;
+    if (cat === "下装" && stHas(txt, /紧身|包臀|弹力/)) s -= 8;
+    if (cat === "上衣" && !stIsNeutral(r.color)) s += 4;
+    if (cat === "上衣" && stHas(txt, /泡泡|垫肩/)) s -= 5;
+  } else if (shape === "苹果形"){
+    if (stHas(txt, /v领|垂感|直筒/i)) s += 6;
+    if (stHas(txt, /高腰/)) s += 4;
+    if (stHas(txt, /紧身|收腰|包臀/)) s -= 6;
+  } else if (shape === "沙漏"){
+    if (stHas(txt, /收腰|腰带|修身|包臀/)) s += 6;
+  } else if (shape === "H形"){
+    if (stHas(txt, /短款|腰带|系带|伞摆|a字|阔腿|高腰/i)) s += 6;
+  } else if (shape === "倒三角"){
+    if (cat === "下装" && (stHas(txt, /阔腿|伞|百褶|a字/i) || !stIsNeutral(r.color))) s += 6;
+    if (cat === "上衣" && stHas(txt, /垫肩|泡泡|硬挺/)) s -= 6;
+  }
+  return s;
+}
+
+/* ---------- ③ 搭配配方：把当季公式写成「槽位表」 ----------
+   cat    目标类目（"一体式" = 连衣裙 / 套装 / 汉服整套）
+   like   名称或材质里命中就加分（这是「槽位想要的样子」）
+   not    命中就减分（明显不搭这一槽）
+   fit / formal   版型、正式度偏好
+   need:false     这个槽位填不满也允许成一套（配饰、可选外套） */
+const ST_RECIPES = [
+  { id:"hanfu", name:"形制整套", base:96, temp:["热","舒适","微凉","冷"], scene:["出行","休闲","约会","通勤"],
+    slots:[ {cat:"一体式", label:"套装 / 汉服整套", only:"hanfu"},
+            {cat:"鞋履",   label:"同风格鞋"},
+            {cat:"配饰",   label:"发饰 / 披帛", need:false} ],
+    why:"汉服 / 套装是「成套才成立」的，整套出场最稳——不拆、不叠现代外套",
+    tips:["腰封 / 系带别省，腰线是整套的骨架"] },
+
+  { id:"coat", name:"风衣叠穿", base:88, temp:["舒适","微凉","冷"], scene:["通勤","出行","约会"],
+    slots:[ {cat:"外套", label:"风衣 / 大衣", like:/风衣|大衣|长外套|双面呢/},
+            {cat:"上衣", label:"衬衫 / 针织", like:/衬衫|针织|高领|毛衣/, not:/短袖|吊带/},
+            {cat:"下装", label:"直筒 / 阔腿裤", like:/直筒|阔腿|西裤|牛仔/},
+            {cat:"鞋履", label:"乐福 / 短靴", like:/乐福|短靴|切尔西|皮鞋/},
+            {cat:"配饰", label:"配饰", need:false} ],
+    why:"风衣是秋天最能打的外套：敞开穿显高、系上腰带显瘦，几乎能配所有内搭",
+    tips:["内浅外深、内薄外厚，层次一眼看得出来"] },
+
+  { id:"suit", name:"西装通勤", base:84, temp:["舒适","微凉"], scene:["通勤","约会"],
+    slots:[ {cat:"外套", label:"西装外套", like:/西装|西服|小西装/, fit:["宽松","合身"]},
+            {cat:"上衣", label:"高领 / 衬衫", like:/高领|针织|衬衫/, not:/卫衣|帽衫/},
+            {cat:"下装", label:"直筒裤 / 半裙", like:/直筒|西裤|牛仔|半裙|铅笔/},
+            {cat:"鞋履", label:"乐福鞋 / 短靴"},
+            {cat:"配饰", label:"配饰", need:false} ],
+    why:"雾霭灰 / 燕麦 / 驼色西装 + 修身高领，是最稳的通勤公式，颜色控制在三种以内就高级",
+    tips:["西装选落肩一点更松弛，肩线太硬会显板"] },
+
+  { id:"knit", name:"针织温柔", base:80, temp:["舒适","微凉","冷"], scene:["休闲","约会","通勤"],
+    slots:[ {cat:"上衣", label:"针织 / 毛衣", like:/针织|毛衣|羊绒|羊毛/, not:/短袖|吊带/},
+            {cat:"下装", label:"半裙 / 直筒裤", like:/半裙|伞|直筒|阔腿|牛仔|呢/},
+            {cat:"鞋履", label:"短靴 / 乐福", like:/短靴|乐福|切尔西|皮鞋/},
+            {cat:"配饰", label:"配饰", need:false} ],
+    why:"针织是秋天的宝藏：软糯贴身，配半裙温柔、配直筒裤利落",
+    tips:["大地色系（米 / 燕麦 / 浅咖）怎么组合都和谐"] },
+
+  { id:"jacket", name:"短夹克出门", base:78, temp:["舒适","微凉"], scene:["休闲","出行"],
+    slots:[ {cat:"外套", label:"短夹克 / 皮衣", like:/夹克|皮衣|牛仔外套|短外套/},
+            {cat:"上衣", label:"针织 / T 恤", like:/针织|衬衫|t恤|打底/i, not:/吊带/},
+            {cat:"下装", label:"A 字半裙 / 九分裤", like:/a字|半裙|九分|直筒|牛仔/i},
+            {cat:"鞋履", label:"短靴 / 小白鞋", like:/短靴|小白鞋|帆布|球鞋/},
+            {cat:"配饰", label:"配饰", need:false} ],
+    why:"上短下长最显腿长：短外套提高腰线，下装选高腰就赢了",
+    tips:["短外套 + 高腰下装 = 视觉上腿长一截"] },
+
+  { id:"onehot", name:"连衣裙单穿", base:74, temp:["热","舒适","微凉"], scene:["通勤","休闲","约会","出行"],
+    slots:[ {cat:"一体式", label:"连衣裙"},
+            {cat:"鞋履",   label:"单鞋 / 乐福"},
+            {cat:"配饰",   label:"配饰", need:false} ],
+    why:"连衣裙一件顶「上衣 + 下装」，配双鞋就成套——省事、也不容易搭错",
+    tips:["裙长落在小腿最细处最显瘦，配一条细腰带腰线立刻出来"] },
+
+  { id:"dress", name:"裙装 + 薄开衫", base:74, temp:["舒适","微凉"], scene:["约会","休闲","通勤"],
+    slots:[ {cat:"一体式", label:"连衣裙"},
+            {cat:"外套", label:"薄开衫", like:/开衫|针织|薄/, fit:["宽松","合身"]},
+            {cat:"鞋履", label:"乐福 / 单鞋"},
+            {cat:"配饰", label:"配饰", need:false} ],
+    why:"初秋不用急着收夏裙：短款薄开衫压住手臂和肩颈，温柔又不着凉",
+    tips:["开衫要薄、垂感好，别选粗线厚重款；长度落在腰线附近最不压身高"] },
+
+  { id:"tonal", name:"同色系垂感", base:70, temp:["舒适","微凉"], scene:["通勤","休闲","约会","出行"],
+    slots:[ {cat:"上衣", label:"同色系上衣"},
+            {cat:"下装", label:"垂感长裤", like:/阔腿|垂感|直筒|西裤/},
+            {cat:"鞋履", label:"同色系鞋"},
+            {cat:"配饰", label:"配饰", need:false} ],
+    why:"低饱和同色穿到底最显贵：上衣软一点、裤子垂一点，靠材质拉开层次就不会像睡衣",
+    tips:["鞋包选同色系、深浅差一档，整体立刻高级"] },
+
+  { id:"summer", name:"夏日透气", base:66, temp:["热"], scene:["通勤","休闲","约会","出行"],
+    slots:[ {cat:"上衣", label:"短袖 / 衬衫", like:/短袖|雪纺|亚麻|真丝|衬衫|无袖/},
+            {cat:"下装", label:"短裤 / 半裙 / 阔腿", like:/短裤|半裙|阔腿|伞|直筒/},
+            {cat:"鞋履", label:"单鞋 / 凉鞋", like:/凉鞋|单鞋|小白鞋|帆布/},
+            {cat:"配饰", label:"配饰", need:false} ],
+    why:"高温天只做一件事：透气。材质选雪纺 / 亚麻 / 真丝，版型放宽让空气流动",
+    tips:["浅色比深色凉快，阔腿比紧身通风"] },
+
+  { id:"winter", name:"寒冬厚叠", base:92, temp:["冷"], scene:["通勤","休闲","约会","出行"],
+    slots:[ {cat:"外套", label:"大衣 / 羽绒", like:/大衣|羽绒|棉服|毛呢|羊绒|双面呢/},
+            {cat:"上衣", label:"毛衣 / 高领", like:/毛衣|针织|高领|羊绒|羊毛/, not:/短袖|吊带/},
+            {cat:"下装", label:"呢裤 / 直筒长裤", like:/呢|直筒|阔腿|牛仔|加绒/},
+            {cat:"鞋履", label:"靴子", like:/靴/},
+            {cat:"配饰", label:"围巾 / 配饰", need:false} ],
+    why:"低温天走三层：内薄（打底）、中暖（毛衣）、外厚（大衣 / 羽绒），冷热都能脱一层",
+    tips:["内搭选浅色、外套选深色，视觉更有立体感"] },
+
+  { id:"basic", name:"基础成套", base:40, temp:["热","舒适","微凉","冷"], scene:["通勤","休闲","约会","出行"],
+    slots:[ {cat:"上衣", label:"上装"},
+            {cat:"下装", label:"下装"},
+            {cat:"鞋履", label:"鞋"},
+            {cat:"外套", label:"外套", need:false},
+            {cat:"配饰", label:"配饰", need:false} ],
+    why:"按今天的厚薄与场景，从已购里凑出最保险的一套",
+    tips:["全身颜色控制在三种以内，最不容易出错"] }
+];
+
+/* ---------- 候选池：场景标签不匹配的先筛掉（留空 = 百搭） ----------
+   只对「身上那几件」（上衣 / 下装 / 一体式 / 外套）卡场景；
+   鞋和配饰是场景中性的——一双通勤乐福鞋配约会裙并不违和，
+   所以它们不参与硬过滤，只在打分时给同场景的加一点分。 */
+function stPool(owned, scene){
+  return (owned || []).filter(r => {
+    const cat = (r || {}).category || "";
+    if (cat === "鞋履" || cat === "配饰") return true;
+    const tags = String(r.styleTags || "").trim();
+    if (!tags) return true;
+    if (scene === "休闲") return true;
+    return tags.indexOf(scene) >= 0;
+  });
+}
+
+/* ---------- 逐槽打分：温度带贴合度 + 槽位偏好 + 配色协调 + 身型 ---------- */
+function stSlotScore(r, slot, band, ctx){
+  const m = stMeta(r), txt = stText(r), rg = stBandRange(band, stRoleOf(slot.cat));
+  let s = 50;
+  if (slot.like && stHas(txt, slot.like)) s += 20;
+  if (slot.not  && stHas(txt, slot.not))  s -= 18;
+  const mid = (rg[0] + rg[1]) / 2;
+  s += Math.max(0, 8 - Math.abs(m.warmth - mid) * 4);          /* 越贴合今天该穿的厚薄越好 */
+  if (slot.fit && slot.fit.indexOf(m.fit) >= 0) s += 8;
+  if (slot.formal && slot.formal.indexOf(m.formal) >= 0) s += 8;
+  const tags = String(r.styleTags || "").trim();
+  const sceneNeutral = (slot.cat === "鞋履" || slot.cat === "配饰");
+  if (!tags) s += 3;
+  else if (tags.indexOf(ctx.scene) >= 0) s += 6;
+  else if (ctx.scene !== "休闲" && !sceneNeutral) s -= 8;
+  if (ctx.picked && ctx.picked.length){
+    const cols = ctx.picked.map(x => x.color || "").filter(Boolean);
+    if (r.color && cols.some(c => stSameColorFam(c, r.color))) s += 8;
+    if (m.neutral) s += 5;
+    const clash = r.color && !m.neutral && cols.some(c => !stIsNeutral(c) && !stSameColorFam(c, r.color));
+    if (clash) s -= 12;
+  } else if (m.neutral) s += 3;
+  s += stShapeBonus(r, ctx.shape);
+  return s;
+}
+/* 同分时按 _id 字典序 —— 同一输入永远同一结果，不再随机 */
+function stIdLess(a, b){ return String(a == null ? "" : a) < String(b == null ? "" : b); }
+
+/* ---------- 兼容规则：这一套能不能穿出门 ---------- */
+function stLookOk(set, band, pad){
+  if (!set.length) return false;
+  if (set.filter(r => r.category === "外套").length > 1) return false;
+  const one = set.filter(stIsOnePiece);
+  if (one.length > 1) return false;
+  if (one.length && set.some(r => r.category === "上衣" || r.category === "下装")) return false;
+  if (one.length){
+    /* 汉服 / 套装：绝不叠西装、风衣、夹克这类现代外套（这正是「很怪」的来源） */
+    if (one.some(stIsHanfu)){
+      const coat = set.filter(r => r.category === "外套")[0];
+      if (coat && !stHas(stText(coat), ST_HANFU_COAT_RE)) return false;
+    }
+  }
+  for (let i = 0; i < set.length; i++){
+    if (!stBandOk(set[i], band, stRoleOf(set[i].category), pad)) return false;
+  }
+  return true;
+}
+
+/* 形制/套装优先级：足够大的加权，保证「成套」的方案稳压拼装式叠穿一头。
+   只要汉服整套能通过厚薄闸门、又以完整形态出场，它就应该是第一选择。 */
+const ST_HANFU_PRIO = 45;
+
+/* ---------- 生成一套：按配方逐槽挑件 ----------
+   partial = true 时是「兜底模式」：核心件缺了也先继续，
+   最后交给缺口提示告诉用户少了什么（总比对着空卡说「凑不出」有用）。 */
+function stBuildLook(recipe, pool, band, ctx, pad, partial){
+  const used = {}, set = [], detail = [];
+  const local = { scene: ctx.scene, shape: ctx.shape, picked: [] };
+  for (let i = 0; i < recipe.slots.length; i++){
+    const slot = recipe.slots[i], role = stRoleOf(slot.cat);
+    const cands = pool.filter(r =>
+      !used[r._id] &&
+      (slot.cat === "一体式" ? stIsOnePiece(r) : r.category === slot.cat) &&
+      (!slot.only || slot.only !== "hanfu" || stIsHanfu(r)) &&
+      stBandOk(r, band, role, pad));
+    let best = null, bestS = -Infinity;
+    cands.forEach(r => {
+      const sc = stSlotScore(r, slot, band, local);
+      if (sc > bestS || (sc === bestS && best && stIdLess(r._id, best._id))){ best = r; bestS = sc; }
+    });
+    /* 槽位默认是「必需」的：缺了核心件（外套 / 连衣裙 / 上衣…）这套就不成立，
+       只有显式写了 need:false 的槽位（配饰、可选外套）才允许空着。
+       少了这道闸，就会出现「配方少了外套照样成立」这种半套搭配。 */
+    const required = slot.need !== false;
+    if (best){ used[best._id] = 1; set.push(best); detail.push({ slot: slot, item: best, score: bestS }); local.picked = set; }
+    else if (partial) continue;           /* 兜底模式：缺件也先列出来 */
+    else if (!required) continue;
+    else return null;                     /* 硬槽位填不满 → 这套不成立 */
+  }
+  if (!set.length) return null;
+  if (!stLookOk(set, band, pad)) return null;
+  /* 总分：配方权重 + 各槽平均分 - 颜色过多的惩罚 */
+  const fams = [...new Set(set.map(r => stColorFam(r.color)).filter(Boolean))];
+  let score = recipe.base + detail.reduce((a, d) => a + d.score, 0) / Math.max(1, detail.length) / 4;
+  score -= Math.max(0, fams.length - 3) * 6;
+  detail.forEach(d => { if (d.slot.like && stHas(stText(d.item), d.slot.like)) score += 3; });
+  /* 形制优先：汉服 / 套装是「成套才成立」的。衣橱里既然有一整套、今天也穿得住，
+     就该整套排在前面——而不是被拼出来的现代叠穿压过去（用户反馈的「汉服配西装很怪」）。 */
+  if (set.some(stIsHanfu)) score += ST_HANFU_PRIO;
+  return { recipe: recipe, set: set, detail: detail, score: score };
+}
+
+/* ---------- 候选搭配：所有适用配方各出一套，去重后按分排序 ----------
+   pad > 0 表示「松一档」：厚薄合适的单品不够时的折中方案。
+   partial = true 表示「兜底」：核心件缺了也先列出，靠缺口提示说明少什么。 */
+function stCandidates(owned, band, temp, scene, shape, pad, partial){
+  const pool = stPool(owned, scene);
+  const ctx = { scene: scene, shape: shape, picked: [] };
+  const looks = [];
+  ST_RECIPES.forEach(rc => {
+    if (rc.temp.indexOf(temp) < 0) return;
+    if (rc.scene.indexOf(scene) < 0) return;
+    const look = stBuildLook(rc, pool, band, ctx, pad || 0, !!partial);
+    if (look) looks.push(look);
+  });
+  if (partial){
+    /* 兜底时优先「补齐度」：填了 4 个槽位的当然比只填 2 个的更值得看 */
+    looks.sort((a, b) => (b.detail.length - a.detail.length) || (b.score - a.score) ||
+      String(a.recipe.id).localeCompare(String(b.recipe.id)));
+  } else {
+    looks.sort((a, b) => (b.score - a.score) || String(a.recipe.id).localeCompare(String(b.recipe.id)));
+  }
+  const seen = {}, out = [];
+  looks.forEach(l => {
+    const sig = l.set.map(r => r._id).sort().join(",");
+    if (seen[sig]) return;
+    seen[sig] = 1; out.push(l);
+  });
+  return out;
 }
 /* 身型 → 下装/上衣用色倾向 */
 const ST_SHAPE_TIPS = {
@@ -2296,77 +2759,93 @@ const Style = {
         '想让单品显示真实图片：把图片放进网站仓库的 <b>assets/wardrobe/</b>，再在单品里填路径（如 assets/wardrobe/白衬衫.jpg）。</div></div>';
       return;
     }
-    const [cond, temp] = this.weather.split(" · ");
+    const parts = (this.weather || "多云 · 舒适").split(" · ");
+    const cond = parts[0] || "多云", temp = parts[1] || "舒适";
     const scene = this.scene;
+    const band = stBand(temp);
     const owned = wd.filter(r => r.owned === "true" || r.owned === true);
-    const bySeason = owned.filter(r => stSeasonFit(r, temp));
-    const inScene = bySeason.filter(r => !(r.styleTags || "").trim() || (r.styleTags || "").indexOf(scene) >= 0 || scene === "休闲");
-    const pick = cat => {
-      const pool = inScene.filter(r => r.category === cat);
-      return pool.length ? pool[Math.floor(pool.length / 2) % pool.length] : null; /* 稳定取中位，避免每次刷新换一套 */
-    };
-    /* 一体式候选池：连衣裙 + 套装（汉服整套）放一起挑 */
-    const pickOnePiece = () => {
-      const pool = inScene.filter(stIsOnePiece);
-      return pool.length ? pool[Math.floor(pool.length / 2) % pool.length] : null;
-    };
-    const top = pick("上衣"), bottom = pick("下装");
-    const onePiece = pickOnePiece();
-    const coat = pick("外套"), shoe = pick("鞋履"), acc = pick("配饰");
-    /* 一体式 vs 分体式：有连衣裙/套装时——天热/舒适优先整件那套；微凉/冷且上衣下装都齐就叠穿分体；
-       分体不齐（缺上衣或下装）则有裙子就穿裙子，不硬凑半套。 */
-    const splitOk = !!(top && bottom);
-    const useOnePiece = !!onePiece && (!splitOk || temp === "热" || temp === "舒适");
-    const opIsSet = !!(useOnePiece && onePiece.category === "套装");
-    const baseSet = (useOnePiece ? [onePiece, coat, shoe, acc] : [top, bottom, coat, shoe, acc]).filter(Boolean);
-    if (!baseSet.length){
-      box.innerHTML = '<div class="empty" style="padding:18px 0"><div class="zh">衣橱里还没有匹配的单品</div>换个场景试试，或把「风格」标签留空（留空=百搭）</div>';
+    const want  = wd.filter(r => r.owned !== "true" && r.owned !== true);
+    const shapeTip = ST_SHAPE_TIPS[shape] || { bottom:"", top:"", why:"身型档案还没填，填好三围推荐会更准" };
+
+    /* ---------- 挑一套：配方逐槽打分 → 按总分排序 → 候选可切换 ----------
+       严格温度带挑不出时自动「松一档」，并在文案里说明这是折中方案。 */
+    /* 三道：严格温度带 → 松一档折中 → 兜底（缺件也先列，靠缺口提示说明） */
+    let cands = stCandidates(owned, band, temp, scene, shape, 0, false);
+    let loose = false, partial = false;
+    if (!cands.length){ cands = stCandidates(owned, band, temp, scene, shape, 1, false); loose = cands.length > 0; }
+    if (!cands.length){ cands = stCandidates(owned, band, temp, scene, shape, 1, true); partial = cands.length > 0; }
+    if (!cands.length){
+      box.innerHTML = '<div class="empty" style="padding:16px 4px;text-align:left">' +
+        '<div class="zh">今天这个天气，衣柜里凑不出合适的一套</div>' +
+        '<div style="line-height:2;margin-top:4px">' +
+        '体感 <b>' + esc(temp) + '（' + esc(band.range) + '）</b>：' + esc(band.tip) + '。<br>' +
+        '去下面「衣橱」看看 <b>' + esc(band.label) + '</b> 的单品够不够；' +
+        '给单品补上<b>材质</b>、并在「厚薄」里点一档，系统就能算得更准。</div></div>';
       return;
     }
-    const shapeTip = ST_SHAPE_TIPS[shape] || { bottom:"", top:"", why:"身型档案还没填，填好三围推荐会更准" };
-    const want = wd.filter(r => r.owned !== "true" && r.owned !== true);
+    /* 换一套：天气 / 场景 / 衣橱一变就回到第 1 套 */
+    const ctxSig = [cond, temp, scene, owned.length, wd.length].join("|");
+    if (this.lookSig !== ctxSig){ this.lookSig = ctxSig; this.lookIdx = 0; }
+    if (!(this.lookIdx >= 0) || this.lookIdx >= cands.length) this.lookIdx = 0;
+    this.lookCount = cands.length;
+    const look = cands[this.lookIdx];
+    const rec = look.recipe;
+    const baseSet = look.set;
 
     /* ---------- 试搭：把想买的那件临时放进这套 ----------
        只影响这一张卡的显示：不写推荐历史、不给 buyCount 计数。
        同类目已有 → 替换那一件；没有这一类 → 补进这套；
-       连衣裙 / 套装与「上衣 + 下装」互为一体式，切换时整组替换，不留「套装 + 裤子」的怪组合。 */
+       一体式（连衣裙 / 套装）与「上衣 + 下装」切换时整组替换，
+       不留「套装 + 裤子」这种怪组合。 */
     const trying = (this.tryId && want.filter(r => String(r._id) === String(this.tryId))[0]) || null;
     if (this.tryId && !trying) this.tryId = null;      /* 单品被删或改成已购 → 自动退出试搭 */
-    const tryOut = stApplyTry(baseSet, trying, inScene);
+    const tryOut = stApplyTry(baseSet, trying, stPool(owned, scene));
     const set = tryOut.set, tryReplaced = tryOut.replaced;
     const tryRepTxt = tryReplaced.map(s => s.name || s.category || "单品").join(" + ");
+    /* 试搭是「强行穿上看看」——不受温度带限制，但偏厚偏薄要明确提醒 */
+    const tryOffBand = !!(trying && !stBandOk(trying, band, stRoleOf(trying.category)));
 
     /* ---------- 缺口：这套里还缺哪一类 ---------- */
     const missCats = stCatScope(set).filter(c => !set.some(s => s.category === c));
     const hardMiss = missCats.filter(c => stHardCats(set).indexOf(c) >= 0);
 
-    /* ---------- 未购推荐：优先补硬缺口，其次补配饰，最后同场景想买 ---------- */
-    const missing = want.filter(r => r.category && missCats.indexOf(r.category) >= 0)[0];
-    const picked = trying ? null : (missing || (want.length ? want.filter(r => stSeasonFit(r, temp))[0] : null));
+    /* ---------- 未购推荐：优先补硬缺口（且厚薄合适），其次同场景备选 ---------- */
+    const wantOk = want.filter(r => stBandOk(r, band, stRoleOf(r.category)));
+    const missing = wantOk.filter(r => r.category && missCats.indexOf(r.category) >= 0)[0]
+                 || want.filter(r => r.category && missCats.indexOf(r.category) >= 0)[0];
+    const picked = trying ? null : (missing || wantOk[0] || want[0] || null);
     const pickFillsGap = !!(picked && picked.category && stHardCats(set).indexOf(picked.category) >= 0 &&
       !baseSet.some(s => s.category === picked.category));
 
+    const opItem = stOnePieceOf(set);
+    const colors = [...new Set(set.map(r => String(r.color || "").split(/\s+/)[0]).filter(Boolean))];
     const reasons = [];
+    reasons.push("体感 " + temp + "（" + band.range + "）→ " + band.label + "：" + band.tip);
+    reasons.push("照「" + rec.name + "」配的：" + rec.why);
     if (shape) reasons.push(shape + "身型：" + shapeTip.why);
-    if (cond === "雨") reasons.push("雨天优先防滑鞋底，浅色裤子容易溅泥");
-    if (temp === "热") reasons.push("高温天选透气材质，短袖/阔腿保持通风");
-    if (temp === "冷") reasons.push("低温天叠穿，内薄外厚更好调节");
-    if (useOnePiece) reasons.push(opIsSet
-      ? "天" + temp + "，一整套直接穿——一件顶「上衣 + 下装」，不用再配"
-      : "天" + temp + "，连衣裙单穿刚好——一件顶「上衣 + 下装」，省事也不闷");
-    if (!useOnePiece && top && bottom && stIsNeutral(bottom.color) && !stIsNeutral(top.color)) reasons.push("中性色下装打底，" + esc(top.color) + "色上衣做亮点，繁简平衡");
+    if (cond === "雨") reasons.push("雨天优先防滑鞋底，浅色下装容易溅泥");
+    else if (cond === "雪") reasons.push("雪天保暖优先、鞋底防滑，颜色深一点更耐脏");
+    if (colors.length && colors.length <= 3) reasons.push("主色 " + colors.join(" / ") + "，全身不超过三种，最不容易乱");
+    else if (colors.length > 3) reasons.push("这套用到 " + colors.length + " 种颜色，建议再收一收");
+    if (loose) reasons.push("⚠ 今天厚薄正合适的单品不够，这是放宽一档后的折中方案——按提示补几件会更准");
+    if (partial) reasons.push("衣柜里还缺几件，这是「现有单品」能给出的版本；补上缺口就会更完整");
+
     const tips = [];
-    if (useOnePiece){
-      if (opIsSet) tips.push("整套按形制穿，腰封 / 系带别省——腰线是整套的骨架");
+    rec.tips.forEach(t => tips.push(t));
+    if (opItem){
+      const opCat = opItem.category;
+      tips.push(opCat + "一件顶「上衣 + 下装」，配双鞋就成套——今天不用再配上下装");
+      if (stIsHanfu(opItem)) tips.push("整套按形制穿，腰封 / 系带别省——腰线是整套的骨架");
       else if (shape === "H形") tips.push("裙上系一条细腰带，腰线立刻出来");
       else if (shape === "梨形") tips.push("选 A 字或伞摆裙，避开紧身包臀");
       else if (shape === "苹果形") tips.push("挑高腰线 + V 领的裙型，腰腹更利落");
-      tips.push(opIsSet ? "备一件披风 / 大袖衫做外搭，空调房里也压得住" : "备一件薄外搭（开衫 / 小西装），空调房和早晚温差都稳");
     } else {
-      if (shape === "H形" && top) tips.push(top.name + " 下摆塞进裤腰，腰线立起来");
-      if (shape === "梨形" && bottom) tips.push("包/鞋与下装同色系，视线连贯更显高");
+      const topIt = set.filter(r => r.category === "上衣")[0];
+      const botIt = set.filter(r => r.category === "下装")[0];
+      if (shape === "H形" && topIt) tips.push(topIt.name + " 下摆塞进裤腰，腰线立起来");
+      if (shape === "梨形" && botIt) tips.push("包 / 鞋与下装同色系，视线连贯更显高");
     }
-    if (shoe) tips.push("鞋和配饰控制在两个颜色以内，整体不散");
+    if (set.filter(r => r.category === "鞋履").length) tips.push("鞋和配饰控制在两个颜色以内，整体不散");
 
     /* ---------- 渲染：日期 + 天气摘要 → 试搭条 → 搭配（已购真图）→ 缺口 → 想买文字卡 → 说明 ---------- */
     const buyCount = picked ? (num(picked.buyCount) || 0) : 0;
@@ -2374,15 +2853,23 @@ const Style = {
     box.innerHTML =
       '<div class="st-top">' +
         '<span class="st-date">' + esc(stDateText()) + '</span>' +
-        '<span class="st-tag wx">' + esc(this.weather || "天气待定") + '</span>' +
+        '<span class="st-tag wx">' + esc(this.weather || "天气待定") + "（" + esc(band.range) + "）" + '</span>' +
         '<span class="st-tag">' + esc(scene) + '</span>' +
+        '<span class="st-tag rec">' + esc(rec.name) + '</span>' +
+        (cands.length > 1
+          ? '<button class="icon-btn" id="stAlt" style="margin-left:auto;width:auto;padding:0 10px;height:26px">换一套 ' + (this.lookIdx + 1) + '/' + cands.length + '</button>'
+          : "") +
       '</div>' +
+      (partial ? '<div class="st-gap">衣柜里还凑不齐一整套，先把能穿的列出来——缺哪一类在下面标出来了。</div>'
+        : (loose ? '<div class="st-gap">衣柜里厚薄正合适的单品偏少，下面是<b>放宽一档</b>的折中方案。</div>' : "")) +
       (trying ?
         '<div class="st-tryn">试搭中：现在看的是「' + esc(trying.name || "想买单品") + '」放进这套之后的样子' +
         (tryReplaced.length
           ? '（替代「' + esc(tryRepTxt) + '」）'
           : '（补上这套缺的「' + esc(trying.category || "") + '」）') +
-        '。试搭不写入推荐历史，也不给 buyCount 计数。</div>' : "") +
+        '。试搭不写入推荐历史，也不给 buyCount 计数。' +
+        (tryOffBand ? '<br>⚠ 提醒：这件按今天的体感（' + esc(temp) + ' · ' + esc(band.range) + '）'
+          + (stMeta(trying).warmth > 3 ? "偏厚" : "偏薄") + '，正式穿出门可能不合适。' : "") + '</div>' : "") +
       '<div class="st-set">' +
       set.map(s =>
         '<div class="st-item' + ((trying && s === trying) ? " try" : "") + '">' +
@@ -2391,7 +2878,8 @@ const Style = {
           ? '<img src="' + esc(s.image) + '" alt="' + esc(s.name || "") + '" loading="lazy">'
           : '<div class="noim">' + esc(s.category || "单品") + ' · 待补图</div>') +
         '<div class="tx"><div class="nm">' + esc(s.name || "未命名") + '</div>' +
-        '<div class="mt">' + esc(s.category || "") + " · " + esc(s.color || "—") + '</div></div>' +
+        '<div class="mt">' + esc(s.category || "") + " · " + esc(s.color || "—") + " · " + esc(s.material || "—") + '</div>' +
+        '<div class="mb">' + esc(stMetaTxt(s)) + '</div></div>' +
         ((trying && s === trying && tryReplaced.length) ? '<div class="rep">替代「' + esc(tryRepTxt) + '」</div>' : "") +
         '</div>').join("") +
       '</div>' +
@@ -2426,6 +2914,15 @@ const Style = {
     if (stStopBtn) stStopBtn.addEventListener("click", () => this.stopTry());
     const stTryBtn = $("#stTryPick");
     if (stTryBtn) stTryBtn.addEventListener("click", () => this.startTry(picked._id));
+    const stAltBtn = $("#stAlt");
+    if (stAltBtn) stAltBtn.addEventListener("click", () => this.cycleLook());
+  },
+  /* 换一套：在候选搭配之间轮换（配方不同 → 整套单品都换） */
+  cycleLook(){
+    const n = this.lookCount || 1;
+    if (n < 2) return;
+    this.lookIdx = (this.lookIdx + 1) % n;
+    this.renderSuggest();
   },
   /* ============ 试搭（只影响这张卡的显示，不落库、不计数） ============ */
   startTry(id){
@@ -2477,10 +2974,11 @@ const Style = {
   },
   /* 清空表单并退出编辑态（新增与修改共用同一张表单） */
   resetWdForm(){
-    this.editId = null; this.pendingImg = null;
+    this.editId = null; this.pendingImg = null; this.editNote = "";
     ["#wdName","#wdUrl","#wdColor","#wdMaterial","#wdStyle","#wdImgPath"].forEach(k => {
       const el = $(k); if (el) el.value = "";
     });
+    ["#wdWarm","#wdFit","#wdFormal"].forEach(k => { const el = $(k); if (el) el.value = ""; });
     const pv = $("#wdPhotoPrevWrap"); if (pv) pv.style.display = "none";
     const bar = $("#wdEditBar"); if (bar) bar.style.display = "none";
     const btn = $("#wdSave"); if (btn) btn.textContent = "加 入";
@@ -2507,6 +3005,12 @@ const Style = {
     if (cat){ cat.value = r.category || "上衣"; if (cat.value !== (r.category || "上衣")) cat.value = "上衣"; }
     const os = $("#wdOwned"); if (os) os.value = (r.owned === "true" || r.owned === true) ? "true" : "false";
     const sn = $("#wdSeason"); if (sn) sn.value = r.season || "四季";
+    /* 厚薄 / 版型 / 正式度：从 note 里还原；其余自由文本存起来，保存时原样带回 */
+    this.editNote = r.note || "";
+    const np = stNoteParts(r.note);
+    const sw = $("#wdWarm");   if (sw)  sw.value = np.w;
+    const sf = $("#wdFit");    if (sf)  sf.value = np.fit;
+    const smo = $("#wdFormal"); if (smo) smo.value = np.formal;
     const pv = $("#wdPhotoPrevWrap");
     if (this.pendingImg){
       const p = $("#wdPhotoPrev"); if (p) p.src = this.pendingImg;
@@ -2540,7 +3044,14 @@ const Style = {
       owned: $("#wdOwned").value,
       styleTags: $("#wdStyle").value.trim(),
       season: $("#wdSeason").value,
-      note: ""
+      /* 厚薄 / 版型 / 正式度：手填优先，写进 note；三档留空则由 stMeta 按材质 / 名称推断。
+         修改时把 note 里的自由文本（不属于这三项的部分）原样带回，一个字不丢。 */
+      note: stNoteBuild(
+        $("#wdWarm")   ? $("#wdWarm").value   : "",
+        $("#wdFit")    ? $("#wdFit").value    : "",
+        $("#wdFormal") ? $("#wdFormal").value : "",
+        stNoteParts(this.editNote).rest
+      )
     };
     const id = this.editId;
     /* 新单品 buyCount 从 0 起；修改时**不带这个字段**，原计数与推荐历史都不受影响 */
@@ -2579,6 +3090,7 @@ const Style = {
         '<div style="padding:8px 10px">' +
         '<div style="font-size:13px;font-weight:600">' + esc(r.name || "未命名") + '</div>' +
         '<div style="font-size:11px;color:var(--soft);margin-top:2px">' + esc(r.category || "") + " · " + esc(r.color || "—") + " · " + esc(r.material || "—") + '</div>' +
+        '<div style="font-size:10.5px;color:#9a6b2f;margin-top:2px" title="推荐引擎按这三项判断：厚薄卡温度、版型与正式度决定跟谁搭。点「✎ 修改」可手改。">' + esc(stMetaTxt(r)) + '</div>' +
         (r.styleTags ? '<div style="font-size:11px;color:var(--soft);margin-top:2px">#' + esc(r.styleTags.trim().split(/\s+/).join(" #")) + '</div>' : "") +
         (!isOwned(r) ? '<div style="font-size:11px;margin-top:3px;color:' + ((num(r.buyCount) || 0) >= ST_BUY_HINT ? "#c0392b" : "#9a6b2f") + '">被推荐 ' + (num(r.buyCount) || 0) + ' 次' +
           (r.productUrl ? ' · <a href="' + esc(r.productUrl) + '" target="_blank" rel="noopener" style="color:var(--clay)">看商品 ↗</a>' : "") + '</div>' +
