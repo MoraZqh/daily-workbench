@@ -713,9 +713,15 @@ code.k{background:#efece3;border-radius:5px;padding:1px 7px;font-size:12px;font-
           <div id="wdEditBar" style="display:none;margin-bottom:10px;padding:8px 10px;border-radius:10px;background:#fdf4e3;color:#8a6a37;font-size:12px;line-height:1.7">
             ✎ 正在修改：<b id="wdEditName"></b> —— 改完点「保存修改」，不改就点「取消」。
           </div>
+          <div id="wdCatHint" style="margin-bottom:10px;font-size:12px;color:var(--soft);line-height:1.8">
+            分类怎么选：<b>连衣裙 / 套装</b>都是「一件顶上衣 + 下装」，会配鞋和配饰、不会被拆开——
+            汉服整套、长袍、连体裤都归这里（注：套装图片放整套照，名称把两件都写上，如「明制袄裙（衫 + 马面裙）」）。<br>
+            想让同一件上襦配好几条裙子（故意玩混搭），才拆成 <b>上衣 + 下装</b> 两条录，
+            并给两条都写上同一个场景标签（如「出行」），否则会跟现代衣服串搭。
+          </div>
           <div class="form-row">
             <div class="field" style="flex:2"><label>名称</label><input type="text" id="wdName" placeholder="如：白色棉质衬衫" maxlength="30"></div>
-            <div class="field"><label>分类</label><select id="wdCategory"><option>上衣</option><option>连衣裙</option><option>下装</option><option>外套</option><option>鞋履</option><option>配饰</option></select></div>
+            <div class="field"><label>分类</label><select id="wdCategory"><option>上衣</option><option>连衣裙</option><option>套装</option><option>下装</option><option>外套</option><option>鞋履</option><option>配饰</option></select></div>
             <div class="field"><label>颜色</label><input type="text" id="wdColor" placeholder="白 / 藏青 白" maxlength="16"></div>
             <div class="field"><label>材质</label><input type="text" id="wdMaterial" placeholder="棉 / 羊毛" maxlength="12"></div>
             <div class="field"><label>风格（空格分隔）</label><input type="text" id="wdStyle" placeholder="通勤 简约" maxlength="24"></div>
@@ -2039,49 +2045,57 @@ function stDateText(d){
 /* 未购单品被推荐到第几次才提示「可以考虑入手」 */
 const ST_BUY_HINT = 5;
 
-/* 品类：连衣裙是「一体式」——一件顶「上衣 + 下装」，所以缺口判定要分两套。
-   硬缺口 = 缺了就组不成一整套；外套 / 配饰 都是可选层，缺了只作轻提示。 */
-const ST_ALL_CATS   = ["上衣", "连衣裙", "下装", "外套", "鞋履", "配饰"];   /* 全类目清单（供说明/校验用） */
-const ST_ONE_PIECE  = "连衣裙";
-const ST_HARD_SPLIT = ["上衣", "下装", "鞋履"];      /* 分体式必备：上衣 + 下装 + 鞋 */
-const ST_HARD_DRESS = ["连衣裙", "鞋履"];            /* 一体式必备：连衣裙 + 鞋 */
-const ST_SCOPE_SPLIT = ["上衣", "下装", "鞋履", "配饰"];
-const ST_SCOPE_DRESS = ["连衣裙", "鞋履", "配饰"];
+/* 品类：连衣裙 / 套装是「一体式」——一件顶「上衣 + 下装」，
+   所以缺口判定要分两套。硬缺口 = 缺了就组不成一整套；
+   外套 / 配饰 都是可选层，缺了只作轻提示。 */
+const ST_ALL_CATS       = ["上衣", "连衣裙", "套装", "下装", "外套", "鞋履", "配饰"];   /* 全类目清单（供说明/校验用） */
+const ST_ONE_PIECE_CATS = ["连衣裙", "套装"];         /* 一件顶「上衣 + 下装」的类目 */
+const ST_HARD_SPLIT     = ["上衣", "下装", "鞋履"];    /* 分体式必备：上衣 + 下装 + 鞋 */
+const ST_SCOPE_SPLIT    = ["上衣", "下装", "鞋履", "配饰"];
 /* 外套属于可选层：可以录入、可以进搭配，但缺了不算缺口，所以不进缺口文案 */
 
-/* 这套里有没有连衣裙（有 → 走一体式判定，上衣/下装不再是缺口） */
-function stHasDress(set){ return (set || []).some(s => s && s.category === ST_ONE_PIECE); }
-/* 这套的必备类目 */
-function stHardCats(set){ return stHasDress(set) ? ST_HARD_DRESS : ST_HARD_SPLIT; }
+/* 这一件是不是「一体式」（连衣裙 / 套装 / 汉服整套） */
+function stIsOnePiece(r){ return !!r && ST_ONE_PIECE_CATS.indexOf(r.category) >= 0; }
+/* 这套里的那一件一体式单品（没有则 null） */
+function stOnePieceOf(set){ return (set || []).filter(stIsOnePiece)[0] || null; }
+/* 这套的必备类目：一体的那件 + 鞋 */
+function stHardCats(set){
+  const op = stOnePieceOf(set);
+  return op ? [op.category, "鞋履"] : ST_HARD_SPLIT;
+}
 /* 这套还该留意哪些类目（一体式时不再提示「上衣 / 下装」） */
-function stCatScope(set){ return stHasDress(set) ? ST_SCOPE_DRESS : ST_SCOPE_SPLIT; }
+function stCatScope(set){
+  const op = stOnePieceOf(set);
+  return op ? [op.category, "鞋履", "配饰"] : ST_SCOPE_SPLIT;
+}
 
 /* 试搭：把「想买的那件」临时放进这套。
    同类目已有 → 替换那一件；缺这类 → 补进这套（跟在原来那件的位置上）；
-   连衣裙与「上衣 + 下装」互为一体式，切换时整组替换，不留「连衣裙 + 裤子」的怪组合：
-     · 试搭连衣裙 → 换掉整套上衣 + 下装；
-     · 试搭上衣/下装 → 换掉裙子，并从已购里补上配套的另一件，凑成完整分体套。
+   「一体式」（连衣裙 / 套装 / 汉服整套）与「上衣 + 下装」互为一体，切换时整组替换，
+   不留「套装 + 裤子」这种怪组合：
+     · 试搭一体式那件 → 换掉整套上衣 + 下装（或换掉已有的一体式件）；
+     · 试搭上衣/下装 → 换掉一体式件，并从已购里补上配套的另一件，凑成完整分体套。
    返回 { set, replaced }，replaced 是被换下来的单品数组（用于文案说明）。 */
 function stApplyTry(baseSet, trying, pool){
   const set = (baseSet || []).slice();
   if (!trying) return { set, replaced: [] };
-  if (trying.category === ST_ONE_PIECE){
-    const out = set.filter(s => s.category === ST_ONE_PIECE || s.category === "上衣" || s.category === "下装");
+  if (stIsOnePiece(trying)){
+    const out = set.filter(s => stIsOnePiece(s) || s.category === "上衣" || s.category === "下装");
     if (!out.length) return { set: set.concat([trying]), replaced: [] };
     const at = Math.max(0, set.indexOf(out[0]));
     const rest = set.filter(s => out.indexOf(s) < 0);
     rest.splice(Math.min(at, rest.length), 0, trying);
     return { set: rest, replaced: out };
   }
-  const dress = set.filter(s => s.category === ST_ONE_PIECE)[0];
-  /* 试搭的是上衣/下装，而这套正靠裙子撑 → 换掉裙子，补上配套的另一件 */
-  if (dress && (trying.category === "上衣" || trying.category === "下装")){
+  const op = stOnePieceOf(set);
+  /* 试搭的是上衣/下装，而这套正靠一体式那件撑 → 换掉它，补上配套的另一件 */
+  if (op && (trying.category === "上衣" || trying.category === "下装")){
     const need = trying.category === "上衣" ? "下装" : "上衣";
-    const mate = (pool || []).filter(r => r.category === need && r !== dress)[0] || null;
-    const at = Math.max(0, set.indexOf(dress));
-    const rest = set.filter(s => s !== dress);
+    const mate = (pool || []).filter(r => r.category === need && r !== op)[0] || null;
+    const at = Math.max(0, set.indexOf(op));
+    const rest = set.filter(s => s !== op);
     rest.splice.apply(rest, [Math.min(at, rest.length), 0].concat([trying], mate ? [mate] : []));
-    return { set: rest, replaced: [dress] };
+    return { set: rest, replaced: [op] };
   }
   const i = set.findIndex(s => s.category === trying.category);
   if (i >= 0){ const out = set.slice(); out[i] = trying; return { set: out, replaced: [set[i]] }; }
@@ -2277,7 +2291,7 @@ const Style = {
         '<div class="zh">推荐会出现在这里</div>' +
         '<div style="line-height:2;margin-top:4px">' +
         '还差一步：先到下面<b>「衣橱」</b>加几件<b>已购</b>单品——<b>上衣 + 下装 + 鞋</b>各一件，' +
-        '或者一条<b>连衣裙</b> + 一双<b>鞋</b>（裙子一件顶上衣加下装）。外套、配饰可选。<br>' +
+        '或者一条<b>连衣裙</b> / 一套<b>套装</b>（汉服整套也算）+ 一双<b>鞋</b>，两件就成套。外套、配饰可选。<br>' +
         '加完回到这张卡，点一下天气（晴 / 雨 × 热 / 冷）和场景，上面立刻出一整套：单品卡片 + <b>搭配说明</b> + 搭配小提示。<br>' +
         '想让单品显示真实图片：把图片放进网站仓库的 <b>assets/wardrobe/</b>，再在单品里填路径（如 assets/wardrobe/白衬衫.jpg）。</div></div>';
       return;
@@ -2291,14 +2305,20 @@ const Style = {
       const pool = inScene.filter(r => r.category === cat);
       return pool.length ? pool[Math.floor(pool.length / 2) % pool.length] : null; /* 稳定取中位，避免每次刷新换一套 */
     };
+    /* 一体式候选池：连衣裙 + 套装（汉服整套）放一起挑 */
+    const pickOnePiece = () => {
+      const pool = inScene.filter(stIsOnePiece);
+      return pool.length ? pool[Math.floor(pool.length / 2) % pool.length] : null;
+    };
     const top = pick("上衣"), bottom = pick("下装");
-    const dress = pick(ST_ONE_PIECE);
+    const onePiece = pickOnePiece();
     const coat = pick("外套"), shoe = pick("鞋履"), acc = pick("配饰");
-    /* 一体式 vs 分体式：有连衣裙时——天热/舒适优先裙子；微凉/冷且上衣下装都齐就叠穿分体；
-       分体不齐（缺上衣或下装）则有裙子就走裙子，不硬凑半套。 */
+    /* 一体式 vs 分体式：有连衣裙/套装时——天热/舒适优先整件那套；微凉/冷且上衣下装都齐就叠穿分体；
+       分体不齐（缺上衣或下装）则有裙子就穿裙子，不硬凑半套。 */
     const splitOk = !!(top && bottom);
-    const useDress = !!dress && (!splitOk || temp === "热" || temp === "舒适");
-    const baseSet = (useDress ? [dress, coat, shoe, acc] : [top, bottom, coat, shoe, acc]).filter(Boolean);
+    const useOnePiece = !!onePiece && (!splitOk || temp === "热" || temp === "舒适");
+    const opIsSet = !!(useOnePiece && onePiece.category === "套装");
+    const baseSet = (useOnePiece ? [onePiece, coat, shoe, acc] : [top, bottom, coat, shoe, acc]).filter(Boolean);
     if (!baseSet.length){
       box.innerHTML = '<div class="empty" style="padding:18px 0"><div class="zh">衣橱里还没有匹配的单品</div>换个场景试试，或把「风格」标签留空（留空=百搭）</div>';
       return;
@@ -2309,7 +2329,7 @@ const Style = {
     /* ---------- 试搭：把想买的那件临时放进这套 ----------
        只影响这一张卡的显示：不写推荐历史、不给 buyCount 计数。
        同类目已有 → 替换那一件；没有这一类 → 补进这套；
-       连衣裙与「上衣+下装」互为一体式，切换时整组替换，不留「裙子 + 裤子」的怪组合。 */
+       连衣裙 / 套装与「上衣 + 下装」互为一体式，切换时整组替换，不留「套装 + 裤子」的怪组合。 */
     const trying = (this.tryId && want.filter(r => String(r._id) === String(this.tryId))[0]) || null;
     if (this.tryId && !trying) this.tryId = null;      /* 单品被删或改成已购 → 自动退出试搭 */
     const tryOut = stApplyTry(baseSet, trying, inScene);
@@ -2331,14 +2351,17 @@ const Style = {
     if (cond === "雨") reasons.push("雨天优先防滑鞋底，浅色裤子容易溅泥");
     if (temp === "热") reasons.push("高温天选透气材质，短袖/阔腿保持通风");
     if (temp === "冷") reasons.push("低温天叠穿，内薄外厚更好调节");
-    if (useDress) reasons.push("天" + temp + "，连衣裙单穿刚好——一件顶「上衣 + 下装」，省事也不闷");
-    if (!useDress && top && bottom && stIsNeutral(bottom.color) && !stIsNeutral(top.color)) reasons.push("中性色下装打底，" + esc(top.color) + "色上衣做亮点，繁简平衡");
+    if (useOnePiece) reasons.push(opIsSet
+      ? "天" + temp + "，一整套直接穿——一件顶「上衣 + 下装」，不用再配"
+      : "天" + temp + "，连衣裙单穿刚好——一件顶「上衣 + 下装」，省事也不闷");
+    if (!useOnePiece && top && bottom && stIsNeutral(bottom.color) && !stIsNeutral(top.color)) reasons.push("中性色下装打底，" + esc(top.color) + "色上衣做亮点，繁简平衡");
     const tips = [];
-    if (useDress){
-      if (shape === "H形") tips.push("裙上系一条细腰带，腰线立刻出来");
+    if (useOnePiece){
+      if (opIsSet) tips.push("整套按形制穿，腰封 / 系带别省——腰线是整套的骨架");
+      else if (shape === "H形") tips.push("裙上系一条细腰带，腰线立刻出来");
       else if (shape === "梨形") tips.push("选 A 字或伞摆裙，避开紧身包臀");
       else if (shape === "苹果形") tips.push("挑高腰线 + V 领的裙型，腰腹更利落");
-      tips.push("备一件薄外搭（开衫 / 小西装），空调房和早晚温差都稳");
+      tips.push(opIsSet ? "备一件披风 / 大袖衫做外搭，空调房里也压得住" : "备一件薄外搭（开衫 / 小西装），空调房和早晚温差都稳");
     } else {
       if (shape === "H形" && top) tips.push(top.name + " 下摆塞进裤腰，腰线立起来");
       if (shape === "梨形" && bottom) tips.push("包/鞋与下装同色系，视线连贯更显高");
